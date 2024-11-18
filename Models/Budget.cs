@@ -6,6 +6,6 @@ public class Budget
     public float Amount { get; set; }
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
-    public User User { get; set; }
+    public required User User { get; set; }
     public ICollection<Expense> Expenses { get; set; }
 }
