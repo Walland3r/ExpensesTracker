@@ -1,0 +1,29 @@
+@model IEnumerable<ExpenseTracker.Models.Report>
+
+@{
+    ViewData["Title"] = "Raporty";
+}
+
+<h1>Raporty</h1>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Tytuł</th>
+            <th>Data wygenerowania</th>
+            <th>Akcje</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var report in Model)
+        {
+            <tr>
+                <td>@report.Title</td>
+                <td>@report.DateGenerated.ToShortDateString()</td>
+                <td>
+                    <a asp-action="Details" asp-route-id="@report.Id" class="btn btn-info">Szczegóły</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

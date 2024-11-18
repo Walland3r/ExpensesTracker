@@ -1,0 +1,12 @@
+@model IEnumerable<ExpenseTracker.Models.Category>
+
+<h2>Your Categories</h2>
+<table class="table">
+    @foreach (var category in Model)
+    {
+        <tr>
+            <td>@category.Name</td>
+        </tr>
+    }
+</table>
+<a href="@Url.Action("Create")" class="btn btn-primary">Add Expense</a>

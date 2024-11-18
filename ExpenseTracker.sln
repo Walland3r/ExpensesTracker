@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.002.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "expenses-planner", "expenses-planner.csproj", "{EE3250D5-2529-4953-95EE-9407C017DBFD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EE3250D5-2529-4953-95EE-9407C017DBFD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EE3250D5-2529-4953-95EE-9407C017DBFD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EE3250D5-2529-4953-95EE-9407C017DBFD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EE3250D5-2529-4953-95EE-9407C017DBFD}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {CDCF891E-5F96-4444-AB05-B20D41A8E7B5}
+	EndGlobalSection
+EndGlobal
