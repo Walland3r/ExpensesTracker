@@ -1,12 +1,67 @@
 @model IEnumerable<ExpenseTracker.Models.Category>
 
-<h2>Your Categories</h2>
+<h2>Categories</h2>
+
 <table class="table">
-    @foreach (var category in Model)
-    {
+    <thead>
         <tr>
-            <td>@category.Name</td>
+            <th>Name</th>
+            <th>Actions</th>
         </tr>
-    }
+    </thead>
+    <tbody>
+        @foreach (var category in Model)
+        {
+            <tr>
+                <td>
+                    <span class="category-name">@category.Name</span>
+                    <input type="text" class="form-control category-edit" value="@category.Name" style="display:none;" />
+                </td>
+                <td>
+                    <button class="btn btn-warning btn-edit">Edit</button>
+                    <form asp-action="Delete" asp-route-id="@category.Id" method="post" style="display:inline;">
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                    <form asp-action="Edit" asp-route-id="@category.Id" method="post" class="form-inline-edit" style="display:none;">
+                        <input type="hidden" name="Name" class="form-control category-edit-input" />
+                        <button type="submit" class="btn btn-primary">Save</button>
+                        <button type="button" class="btn btn-secondary btn-cancel">Cancel</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
 </table>
 <a href="@Url.Action("Create")" class="btn btn-primary">Add Category</a>
+
+@section Scripts {
+    <script>
+        document.querySelectorAll('.btn-edit').forEach(button => {
+            button.addEventListener('click', function() {
+                const row = this.closest('tr');
+                row.querySelector('.category-name').style.display = 'none';
+                row.querySelector('.category-edit').style.display = 'block';
+                row.querySelector('.form-inline-edit').style.display = 'inline';
+                this.style.display = 'none';
+            });
+        });
+
+        document.querySelectorAll('.btn-cancel').forEach(button => {
+            button.addEventListener('click', function() {
+                const row = this.closest('tr');
+                row.querySelector('.category-name').style.display = 'block';
+                row.querySelector('.category-edit').style.display = 'none';
+                row.querySelector('.form-inline-edit').style.display = 'none';
+                row.querySelector('.btn-edit').style.display = 'inline';
+            });
+        });
+
+        document.querySelectorAll('.form-inline-edit').forEach(form => {
+            form.addEventListener('submit', function() {
+                const row = this.closest('tr');
+                const input = row.querySelector('.category-edit');
+                this.querySelector('.category-edit-input').value = input.value;
+            });
+        });
+    </script>
+}

@@ -4,6 +4,7 @@ public class Budget
 {
     public int Id { get; set; }
     public float Amount { get; set; }
+    public string Title { get; set; }
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
     public required User User { get; set; }

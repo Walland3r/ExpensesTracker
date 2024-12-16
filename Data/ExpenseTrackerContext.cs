@@ -17,7 +17,7 @@ public class ExpenseTrackerContext : DbContext
     {
         if (!optionsBuilder.IsConfigured)
         {
-            optionsBuilder.UseNpgsql("Host=localhost;Database=ExpenseTrackerDb;Username=yourusername;Password=yourpassword");
+            optionsBuilder.UseNpgsql("Host=localhost;Database=ExpenseTrackerDB;Username=admin;Password=1243");
         }
     }
 }

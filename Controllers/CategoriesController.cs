@@ -8,36 +8,55 @@ public class CategoriesController : Controller
 {
     private readonly ExpenseTrackerContext _context;
 
-    // Konstruktor przyjmujący kontekst bazy danych
     public CategoriesController(ExpenseTrackerContext context)
     {
         _context = context;
+        Console.WriteLine("ExpenseTrackerContext initialized: " + _context);
     }
 
-    // Akcja do wyświetlania wszystkich kategorii
     public async Task<IActionResult> Index()
     {
-        var categories = await _context.Categories.ToListAsync(); // Pobranie kategorii z bazy
-        return View(categories); // Przekazanie do widoku
+        var categories = await _context.Categories.ToListAsync();
+        return View(categories);
     }
 
-    // Akcja do wyświetlania formularza do tworzenia nowej kategorii
     public IActionResult Create()
     {
         return View();
     }
 
-    // Akcja POST do tworzenia nowej kategorii
     [HttpPost]
-    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(Category category)
     {
-        if (ModelState.IsValid)
+        _context.Add(category);
+        await _context.SaveChangesAsync();
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Edit(int id, string name)
+    {
+        var category = await _context.Categories.FindAsync(id);
+        if (category == null)
         {
-            _context.Add(category); // Dodanie kategorii do kontekstu
-            await _context.SaveChangesAsync(); // Zapisanie zmian w bazie
-            return RedirectToAction(nameof(Index)); // Po zapisaniu, przekierowanie na stronę z listą kategorii
+            return NotFound();
         }
-        return View(category); // Jeśli wystąpił błąd, ponownie wyświetl formularz
+
+        category.Name = name;
+        _context.Update(category);
+        await _context.SaveChangesAsync();
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var category = await _context.Categories.FindAsync(id);
+        if (category != null)
+        {
+            _context.Categories.Remove(category);
+            await _context.SaveChangesAsync();
+        }
+        return RedirectToAction(nameof(Index));
     }
 }

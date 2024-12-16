@@ -6,14 +6,87 @@
         <th>Amount</th>
         <th>Date</th>
         <th>Category</th>
+        <th>Actions</th>
     </tr>
     @foreach (var expense in Model)
     {
         <tr>
-            <td>@expense.Amount</td>
-            <td>@expense.Date.ToShortDateString()</td>
-            <td>@expense.Category.Name</td>
+            <td>
+                <span class="expense-amount">@expense.Amount</span>
+                <input type="text" class="form-control expense-edit-amount" value="@expense.Amount" style="display:none;" />
+            </td>
+            <td>
+                <span class="expense-date">@expense.Date.ToShortDateString()</span>
+                <input type="date" class="form-control expense-edit-date" value="@expense.Date.ToString("yyyy-MM-dd")" style="display:none;" />
+            </td>
+            <td>
+                <span class="expense-category">@expense.Category.Name</span>
+                <select class="form-control expense-edit-category" style="display:none;">
+                    @foreach (var category in ViewBag.Categories)
+                    {
+                        var selected = category.Id == expense.Category.Id ? "selected" : "";
+                        <option value="@category.Id" selected="@selected">@category.Name</option>
+                    }
+                </select>
+            </td>
+            <td>
+                <button class="btn btn-warning btn-edit">Edit</button>
+                <form asp-action="Delete" asp-route-id="@expense.Id" method="post" style="display:inline;">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+                <form asp-action="Edit" asp-route-id="@expense.Id" method="post" class="form-inline-edit" style="display:none;">
+                    <input type="hidden" name="Amount" class="form-control expense-edit-amount-input" />
+                    <input type="hidden" name="Date" class="form-control expense-edit-date-input" />
+                    <input type="hidden" name="CategoryId" class="form-control expense-edit-category-input" />
+                    <button type="submit" class="btn btn-primary">Save</button>
+                    <button type="button" class="btn btn-secondary btn-cancel">Cancel</button>
+                </form>
+            </td>
         </tr>
     }
 </table>
 <a href="@Url.Action("Create")" class="btn btn-primary">Add Expense</a>
+
+@section Scripts {
+    <script>
+        document.querySelectorAll('.btn-edit').forEach(button => {
+            button.addEventListener('click', function() {
+                const row = this.closest('tr');
+                row.querySelector('.expense-amount').style.display = 'none';
+                row.querySelector('.expense-edit-amount').style.display = 'block';
+                row.querySelector('.expense-date').style.display = 'none';
+                row.querySelector('.expense-edit-date').style.display = 'block';
+                row.querySelector('.expense-category').style.display = 'none';
+                row.querySelector('.expense-edit-category').style.display = 'block';
+                row.querySelector('.form-inline-edit').style.display = 'inline';
+                this.style.display = 'none';
+            });
+        });
+
+        document.querySelectorAll('.btn-cancel').forEach(button => {
+            button.addEventListener('click', function() {
+                const row = this.closest('tr');
+                row.querySelector('.expense-amount').style.display = 'block';
+                row.querySelector('.expense-edit-amount').style.display = 'none';
+                row.querySelector('.expense-date').style.display = 'block';
+                row.querySelector('.expense-edit-date').style.display = 'none';
+                row.querySelector('.expense-category').style.display = 'block';
+                row.querySelector('.expense-edit-category').style.display = 'none';
+                row.querySelector('.form-inline-edit').style.display = 'none';
+                row.querySelector('.btn-edit').style.display = 'inline';
+            });
+        });
+
+        document.querySelectorAll('.form-inline-edit').forEach(form => {
+            form.addEventListener('submit', function() {
+                const row = this.closest('tr');
+                const amountInput = row.querySelector('.expense-edit-amount');
+                const dateInput = row.querySelector('.expense-edit-date');
+                const categoryInput = row.querySelector('.expense-edit-category');
+                this.querySelector('.expense-edit-amount-input').value = amountInput.value;
+                this.querySelector('.expense-edit-date-input').value = dateInput.value;
+                this.querySelector('.expense-edit-category-input').value = categoryInput.value;
+            });
+        });
+    </script>
+}
