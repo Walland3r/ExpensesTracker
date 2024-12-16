@@ -20,11 +20,6 @@ public class CategoriesController : Controller
         return View(categories);
     }
 
-    public IActionResult Create()
-    {
-        return View();
-    }
-
     [HttpPost]
     public async Task<IActionResult> Create(Category category)
     {
