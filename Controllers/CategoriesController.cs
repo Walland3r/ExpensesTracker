@@ -11,7 +11,6 @@ public class CategoriesController : Controller
     public CategoriesController(ExpenseTrackerContext context)
     {
         _context = context;
-        Console.WriteLine("ExpenseTrackerContext initialized: " + _context);
     }
 
     public async Task<IActionResult> Index()
@@ -31,7 +30,6 @@ public class CategoriesController : Controller
 
         _context.Add(category);
         await _context.SaveChangesAsync();
-        _context.Entry(category).State = EntityState.Detached; // Detach entity
         return RedirectToAction(nameof(Index));
     }
 
@@ -53,7 +51,6 @@ public class CategoriesController : Controller
         category.Name = name;
         _context.Update(category);
         await _context.SaveChangesAsync();
-        _context.Entry(category).State = EntityState.Detached; // Detach entity
         return RedirectToAction(nameof(Index));
     }
 
@@ -65,7 +62,6 @@ public class CategoriesController : Controller
         {
             _context.Categories.Remove(category);
             await _context.SaveChangesAsync();
-            _context.Entry(category).State = EntityState.Detached; // Detach entity
         }
         return RedirectToAction(nameof(Index));
     }

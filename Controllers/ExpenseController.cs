@@ -22,10 +22,6 @@ public class ExpensesController : Controller
     public IActionResult Create()
     {
         var categories = _context.Categories.ToList();
-        foreach (var category in categories)
-        {
-            _context.Entry(category).State = EntityState.Detached; // Detach entity
-        }
         ViewBag.IsCategoryEmpty = !categories.Any();
         if (ViewBag.IsCategoryEmpty)
         {
@@ -40,10 +36,6 @@ public class ExpensesController : Controller
     public async Task<IActionResult> Create(Expense expense)
     {
         var categories = _context.Categories.ToList();
-        foreach (var category in categories)
-        {
-            _context.Entry(category).State = EntityState.Detached; // Detach entity
-        }
         ViewBag.IsCategoryEmpty = !categories.Any();
         if (ViewBag.IsCategoryEmpty)
         {
@@ -51,9 +43,13 @@ public class ExpensesController : Controller
         }
         else
         {
+            // Detach each Category entity instance
+            foreach (var category in categories)
+            {
+                _context.Entry(category).State = EntityState.Detached;
+            }
             _context.Add(expense);
             await _context.SaveChangesAsync();
-            _context.Entry(expense).State = EntityState.Detached; // Detach entity
             return RedirectToAction(nameof(Index));
         }
         ViewBag.Categories = new SelectList(categories, "Id", "Name");
