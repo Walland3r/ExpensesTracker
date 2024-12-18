@@ -19,8 +19,14 @@ public class ExpensesController : Controller
         var categories = await _context.Categories.ToListAsync();
         var budgets = await _context.Budgets.ToListAsync();
         ViewBag.Categories = new SelectList(categories, "Id", "Name");
-        ViewBag.Budgets = new SelectList(budgets, "Id", "Title");
-        return View(expenses);
+
+        var viewModel = new ExpenseViewModel
+        {
+            Expenses = expenses,
+            Budgets = budgets
+        };
+
+        return View(viewModel);
     }
 
     public IActionResult Create()
@@ -75,6 +81,38 @@ public class ExpensesController : Controller
             await _context.SaveChangesAsync();
         }
         return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditBudget(int id, Budget budget)
+    {
+        if (id != budget.Id)
+        {
+            return NotFound();
+        }
+        try
+        {
+            _context.Update(budget);
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (!BudgetExists(budget.Id))
+            {
+                return NotFound();
+            }
+            else
+            {
+                throw;
+            }
+        }
+        return RedirectToAction(nameof(Index));
+    }
+
+    private bool BudgetExists(int id)
+    {
+        return _context.Budgets.Any(e => e.Id == id);
     }
 }
 
