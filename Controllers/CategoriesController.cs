@@ -16,21 +16,34 @@ public class CategoriesController : Controller
 
     public async Task<IActionResult> Index()
     {
-        var categories = await _context.Categories.ToListAsync();
+        var categories = await _context.Categories.AsNoTracking().ToListAsync();
         return View(categories);
     }
 
     [HttpPost]
     public async Task<IActionResult> Create(Category category)
     {
+        if (string.IsNullOrEmpty(category.Name))
+        {
+            ModelState.AddModelError("Name", "The Name field is required.");
+            return View(category);
+        }
+
         _context.Add(category);
         await _context.SaveChangesAsync();
+        _context.Entry(category).State = EntityState.Detached; // Detach entity
         return RedirectToAction(nameof(Index));
     }
 
     [HttpPost]
     public async Task<IActionResult> Edit(int id, string name)
     {
+        if (string.IsNullOrEmpty(name))
+        {
+            ModelState.AddModelError("Name", "The Name field is required.");
+            return View(new Category { Id = id, Name = name });
+        }
+
         var category = await _context.Categories.FindAsync(id);
         if (category == null)
         {
@@ -40,6 +53,7 @@ public class CategoriesController : Controller
         category.Name = name;
         _context.Update(category);
         await _context.SaveChangesAsync();
+        _context.Entry(category).State = EntityState.Detached; // Detach entity
         return RedirectToAction(nameof(Index));
     }
 
@@ -51,6 +65,7 @@ public class CategoriesController : Controller
         {
             _context.Categories.Remove(category);
             await _context.SaveChangesAsync();
+            _context.Entry(category).State = EntityState.Detached; // Detach entity
         }
         return RedirectToAction(nameof(Index));
     }
