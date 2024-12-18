@@ -1,54 +1,145 @@
 @model IEnumerable<ExpenseTracker.Models.Expense>
 
 <h2>Your Expenses</h2>
-<table class="table">
-    <tr>
-        <th>Amount</th>
-        <th>Date</th>
-        <th>Category</th>
-        <th>Actions</th>
-    </tr>
-    @foreach (var expense in Model)
-    {
+<table class="table table-striped">
+    <thead class="thead-dark">
         <tr>
-            <td>
-                <span class="expense-amount">@expense.Amount</span>
-                <input type="text" class="form-control expense-edit-amount" value="@expense.Amount" style="display:none;" />
-            </td>
-            <td>
-                <span class="expense-date">@expense.Date.ToShortDateString()</span>
-                <input type="date" class="form-control expense-edit-date" value="@expense.Date.ToString("yyyy-MM-dd")" style="display:none;" />
-            </td>
-            <td>
-                <span class="expense-category">@expense.Category.Name</span>
-                <select class="form-control expense-edit-category" style="display:none;">
-                    @foreach (var category in ViewBag.Categories)
-                    {
-                        var selected = category.Id == expense.Category.Id ? "selected" : "";
-                        <option value="@category.Id" selected="@selected">@category.Name</option>
-                    }
-                </select>
-            </td>
-            <td>
-                <button class="btn btn-warning btn-edit">Edit</button>
-                <form asp-action="Delete" asp-route-id="@expense.Id" method="post" style="display:inline;">
-                    <button type="submit" class="btn btn-danger">Delete</button>
-                </form>
-                <form asp-action="Edit" asp-route-id="@expense.Id" method="post" class="form-inline-edit" style="display:none;">
-                    <input type="hidden" name="Amount" class="form-control expense-edit-amount-input" />
-                    <input type="hidden" name="Date" class="form-control expense-edit-date-input" />
-                    <input type="hidden" name="CategoryId" class="form-control expense-edit-category-input" />
-                    <button type="submit" class="btn btn-primary">Save</button>
-                    <button type="button" class="btn btn-secondary btn-cancel">Cancel</button>
-                </form>
-            </td>
+            <th>Amount</th>
+            <th>Date</th>
+            <th>Category</th>
+            <th>Actions</th>
         </tr>
-    }
+    </thead>
+    <tbody>
+        @foreach (var expense in Model)
+        {
+            <tr>
+                <td>
+                    <span class="expense-amount">@expense.Amount</span>
+                    <input type="text" class="form-control expense-edit-amount" value="@expense.Amount" style="display:none;" />
+                </td>
+                <td>
+                    <span class="expense-date">@expense.Date.ToShortDateString()</span>
+                    <input type="date" class="form-control expense-edit-date" value="@expense.Date.ToString("yyyy-MM-dd")" style="display:none;" />
+                </td>
+                <td>
+                    <span class="expense-category">@expense.Category.Name</span>
+                    <select class="form-control expense-edit-category" style="display:none;">
+                        @foreach (var category in ViewBag.Categories)
+                        {
+                            var selected = category.Value == expense.Category.Id.ToString() ? "selected" : "";
+                            <option value="@category.Value" selected="@selected">@category.Text</option>
+                        }
+                    </select>
+                </td>
+                <td>
+                    <button class="btn btn-warning btn-edit">Edit</button>
+                    <form asp-action="Delete" asp-route-id="@expense.Id" method="post" style="display:inline;">
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                    <form asp-action="Edit" asp-route-id="@expense.Id" method="post" class="form-inline-edit" style="display:none;">
+                        <input type="hidden" name="Amount" class="form-control expense-edit-amount-input" />
+                        <input type="hidden" name="Date" class="form-control expense-edit-date-input" />
+                        <input type="hidden" name="CategoryId" class="form-control expense-edit-category-input" />
+                        <button type="submit" class="btn btn-primary">Save</button>
+                        <button type="button" class="btn btn-secondary btn-cancel">Cancel</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
 </table>
-<a href="@Url.Action("Create")" class="btn btn-primary">Add Expense</a>
+
+@foreach (var budget in ViewBag.Budgets)
+{
+    <div class="budget-section">
+        <h3>@budget.Text</h3>
+        <button class="btn btn-success btn-show-add-expense" data-budget-id="@budget.Value">Add New Expense</button>
+        <form asp-action="DeleteBudget" asp-route-id="@budget.Value" method="post" style="display:inline;">
+            <button type="submit" class="btn btn-danger">Delete Budget</button>
+        </form>
+        <div class="add-expense-form" data-budget-id="@budget.Value" style="display:none;">
+            <h3>Add New Expense</h3>
+            <form asp-action="Create" method="post" class="form-inline">
+                <div class="form-group mt-2">
+                    <label for="Amount">Amount</label>
+                    <input type="text" name="Amount" class="form-control" />
+                </div>
+                <div class="form-group mt-2">
+                    <label for="Date">Date</label>
+                    <input type="date" name="Date" class="form-control" />
+                </div>
+                <div class="form-group mt-2">
+                    <label for="CategoryId">Category</label>
+                    <select name="CategoryId" class="form-control">
+                        @foreach (var category in ViewBag.Categories)
+                        {
+                            <option value="@category.Value">@category.Text</option>
+                        }
+                    </select>
+                </div>
+                <input type="hidden" name="BudgetId" value="@budget.Value" />
+                <button type="submit" class="btn btn-primary mt-3">Add Expense</button>
+                <button type="button" class="btn btn-secondary btn-cancel-add-expense mt-3">Cancel</button>
+            </form>
+        </div>
+    </div>
+}
+
+<div id="add-budget-form" style="display:none;">
+    <h3>Add New Budget</h3>
+    <form asp-action="CreateBudget" method="post" class="form-inline">
+        <div class="form-group mt-2">
+            <label for="Title">Title</label>
+            <input type="text" name="Title" class="form-control" />
+        </div>
+        <div class="form-group mt-2">
+            <label for="Amount">Amount</label>
+            <input type="text" name="Amount" class="form-control" />
+        </div>
+        <div class="form-group mt-2">
+            <label for="StartDate">Start Date</label>
+            <input type="date" name="StartDate" class="form-control" />
+        </div>
+        <div class="form-group mt-2">
+            <label for="EndDate">End Date</label>
+            <input type="date" name="EndDate" class="form-control" />
+        </div>
+        <button type="submit" class="btn btn-primary mt-3">Add Budget</button>
+        <button type="button" id="btn-cancel-add-budget" class="btn btn-secondary mt-3">Cancel</button>
+    </form>
+</div>
+
+<button id="btn-show-add-budget" class="btn btn-success mt-3 ml-3">Add New Budget</button>
 
 @section Scripts {
     <script>
+        document.querySelectorAll('.btn-show-add-expense').forEach(button => {
+            button.addEventListener('click', function() {
+                const budgetId = this.getAttribute('data-budget-id');
+                document.querySelector(`.add-expense-form[data-budget-id="${budgetId}"]`).style.display = 'block';
+                this.style.display = 'none';
+            });
+        });
+
+        document.querySelectorAll('.btn-cancel-add-expense').forEach(button => {
+            button.addEventListener('click', function() {
+                const form = this.closest('.add-expense-form');
+                form.style.display = 'none';
+                document.querySelector(`.btn-show-add-expense[data-budget-id="${form.getAttribute('data-budget-id')}"]`).style.display = 'block';
+            });
+        });
+
+        document.getElementById('btn-show-add-budget').addEventListener('click', function() {
+            document.getElementById('add-budget-form').style.display = 'block';
+            this.style.display = 'none';
+        });
+
+        document.getElementById('btn-cancel-add-budget').addEventListener('click', function() {
+            document.getElementById('add-budget-form').style.display = 'none';
+            document.getElementById('btn-show-add-budget').style.display = 'block';
+        });
+
         document.querySelectorAll('.btn-edit').forEach(button => {
             button.addEventListener('click', function() {
                 const row = this.closest('tr');
@@ -90,3 +181,25 @@
         });
     </script>
 }
+
+<style>
+    .budget-section {
+        margin-bottom: 20px;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+    }
+    .table-striped tbody tr:nth-of-type(odd) {
+        background-color: rgba(0, 0, 0, 0.05);
+    }
+    .thead-dark th {
+        background-color: #343a40;
+        color: white;
+    }
+    .mt-3 {
+        margin-top: 1rem;
+    }
+    .ml-3 {
+        margin-left: 0.8rem;
+    }
+</style>
