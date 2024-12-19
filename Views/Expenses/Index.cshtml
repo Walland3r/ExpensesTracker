@@ -71,55 +71,62 @@
                 <button type="button" class="btn btn-secondary btn-cancel-edit-budget mt-3">Cancel</button>
             </form>
         </div>
-        <hr />
-        <table class="table table-striped table-bordered">
-            <thead class="thead-dark">
-                <tr>
-                    <th class="text-center">Amount</th>
-                    <th class="text-center">Date</th>
-                    <th class="text-center">Category</th>
-                    <th class="text-center">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var expense in Model.Expenses.Where(e => e.BudgetId == budget.Id))
-                {
+        @{
+            var budgetExpenses = Model.Expenses.Where(e => e.BudgetId == budget.Id).ToList();
+        }
+        @if (budgetExpenses.Any())
+        {
+            <table class="table table-striped table-bordered">
+                <thead class="thead-dark">
                     <tr>
-                        <td class="text-center">
-                            <span class="expense-amount">@expense.Amount</span>
-                            <input type="text" class="form-control expense-edit-amount" value="@expense.Amount" style="display:none;" />
-                        </td>
-                        <td class="text-center">
-                            <span class="expense-date">@expense.Date.ToShortDateString()</span>
-                            <input type="date" class="form-control expense-edit-date" value="@expense.Date.ToString("yyyy-MM-dd")" style="display:none;" />
-                        </td>
-                        <td class="text-center">
-                            <span class="expense-category">@expense.Category.Name</span>
-                            <select class="form-control expense-edit-category" style="display:none;">
-                                @foreach (var category in ViewBag.Categories)
-                                {
-                                    var selected = category.Value == expense.Category.Id.ToString() ? "selected" : "";
-                                    <option value="@category.Value" selected="@selected">@category.Text</option>
-                                }
-                            </select>
-                        </td>
-                        <td class="text-center">
-                            <button class="btn btn-warning btn-sm btn-edit">Edit</button>
-                            <form asp-action="Delete" asp-route-id="@expense.Id" method="post" style="display:inline;">
-                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                            </form>
-                            <form asp-action="Edit" asp-route-id="@expense.Id" method="post" class="form-inline-edit" style="display:none;">
-                                <input type="hidden" name="Amount" class="form-control expense-edit-amount-input" />
-                                <input type="hidden" name="Date" class="form-control expense-edit-date-input" />
-                                <input type="hidden" name="CategoryId" class="form-control expense-edit-category-input" />
-                                <button type="submit" class="btn btn-primary btn-sm">Save</button>
-                                <button type="button" class="btn btn-secondary btn-sm btn-cancel">Cancel</button>
-                            </form>
-                        </td>
+                        <th class="text-center">Amount</th>
+                        <th class="text-center">Date</th>
+                        <th class="text-center">Category</th>
+                        <th class="text-center">Actions</th>
                     </tr>
-                }
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @foreach (var expense in budgetExpenses)
+                    {
+                        <tr>
+                            <td class="text-center">
+                                <span class="expense-amount">@expense.Amount</span>
+                                <input type="text" class="form-control expense-edit-amount" value="@expense.Amount" style="display:none;" />
+                            </td>
+                            <td class="text-center">
+                                <span class="expense-date">@expense.Date.ToShortDateString()</span>
+                                <input type="date" class="form-control expense-edit-date" value="@expense.Date.ToString("yyyy-MM-dd")" style="display:none;" />
+                            </td>
+                            <td class="text-center">
+                                <span class="expense-category">@expense.Category.Name</span>
+                                <select class="form-control expense-edit-category" style="display:none;">
+                                    @foreach (var category in ViewBag.Categories)
+                                    {
+                                        var selected = category.Value == expense.Category.Id.ToString() ? "selected" : "";
+                                        <option value="@category.Value" selected="@selected">@category.Text</option>
+                                    }
+                                </select>
+                            </td>
+                            <td class="text-center">
+                                <button class="btn btn-warning btn-sm btn-edit">Edit</button>
+                                <form asp-action="DeleteExpense" asp-route-id="@expense.Id" method="post" style="display:inline;">
+                                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                </form>
+                                <form asp-action="EditExpense" asp-route-id="@expense.Id" method="post" class="form-inline-edit" style="display:none;">
+                                    <input type="hidden" name="Id" value="@expense.Id" />
+                                    <input type="hidden" name="Amount" class="form-control expense-edit-amount-input" />
+                                    <input type="hidden" name="Date" class="form-control expense-edit-date-input" />
+                                    <input type="hidden" name="CategoryId" class="form-control expense-edit-category-input" />
+                                    <input type="hidden" name="BudgetId" value="@expense.BudgetId" />
+                                    <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                                    <button type="button" class="btn btn-secondary btn-sm btn-cancel">Cancel</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
     </div>
 }
 </div>
@@ -253,6 +260,9 @@
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         width: 49%;
     }
+    .budget-section table{
+        margin-top: 2rem;
+    }
     .light-mode .budget-section {
         background-color: #f9f9f9;
     }
@@ -268,7 +278,7 @@
     }
     .progress {
         height: 2rem;
-        margin: 1rem 0 1rem 0;
+        margin: 1rem 0 2rem 0;
         background: linear-gradient(to left, red, yellow, green);
         transform: scaleX(-1)
     }

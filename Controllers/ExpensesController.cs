@@ -75,5 +75,32 @@ public class ExpensesController : Controller
 
         return RedirectToAction(nameof(Index));
     }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteExpense(int id)
+    {
+        var expense = await _context.Expenses.FindAsync(id);
+        if (expense != null)
+        {
+            _context.Expenses.Remove(expense);
+            await _context.SaveChangesAsync();
+        }
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditExpense(int id, Expense expense)
+    {
+        if (id != expense.Id)
+        {
+            return NotFound();
+        }
+
+        _context.Update(expense);
+        await _context.SaveChangesAsync();
+        return RedirectToAction(nameof(Index));
+    }
 }
 
