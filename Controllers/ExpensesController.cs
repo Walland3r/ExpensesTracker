@@ -55,10 +55,6 @@ public class ExpensesController : Controller
         _context.Add(expense);
         await _context.SaveChangesAsync();
         return RedirectToAction(nameof(Index));
-
-        ViewBag.Categories = new SelectList(categories, "Id", "Name");
-        ViewBag.Budgets = new SelectList(budgets, "Id", "Title");
-        return View(expense);
     }
 
     [HttpPost]
