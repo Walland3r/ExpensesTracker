@@ -11,6 +11,7 @@ public class Expense
         set => _date = DateTime.SpecifyKind(value, DateTimeKind.Utc);
     }
     public required Category Category { get; set; }
-    public required User User { get; set; }
+    public required int CategoryId { get; set; } // Foreign key for Category
     public required Budget Budget { get; set; }
+    public required int BudgetId { get; set; } // Foreign key for Budget
 }

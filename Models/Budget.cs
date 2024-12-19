@@ -20,5 +20,5 @@ public class Budget
         set => _endDate = DateTime.SpecifyKind(value, DateTimeKind.Utc);
     }
     public User? User { get; set; }
-    public ICollection<Expense> Expenses { get; set; }
+    public ICollection<Expense> Expenses { get; set; } = new List<Expense>();
 }

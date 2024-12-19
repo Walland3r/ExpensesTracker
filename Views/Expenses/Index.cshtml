@@ -1,46 +1,6 @@
 @model ExpenseTracker.Models.ExpenseViewModel
 
 <h2 class="text-center my-4">Your Budgets</h2>
-<table class="table table-striped table-bordered">
-    <tbody>
-        @foreach (var expense in Model.Expenses)
-        {
-            <tr>
-                <td>
-                    <span class="expense-amount">@expense.Amount</span>
-                    <input type="text" class="form-control expense-edit-amount" value="@expense.Amount" style="display:none;" />
-                </td>
-                <td>
-                    <span class="expense-date">@expense.Date.ToShortDateString()</span>
-                    <input type="date" class="form-control expense-edit-date" value="@expense.Date.ToString("yyyy-MM-dd")" style="display:none;" />
-                </td>
-                <td>
-                    <span class="expense-category">@expense.Category.Name</span>
-                    <select class="form-control expense-edit-category" style="display:none;">
-                        @foreach (var category in ViewBag.Categories)
-                        {
-                            var selected = category.Value == expense.Category.Id.ToString() ? "selected" : "";
-                            <option value="@category.Value" selected="@selected">@category.Text</option>
-                        }
-                    </select>
-                </td>
-                <td>
-                    <button class="btn btn-warning btn-sm btn-edit">Edit</button>
-                    <form asp-action="Delete" asp-route-id="@expense.Id" method="post" style="display:inline;">
-                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                    </form>
-                    <form asp-action="Edit" asp-route-id="@expense.Id" method="post" class="form-inline-edit" style="display:none;">
-                        <input type="hidden" name="Amount" class="form-control expense-edit-amount-input" />
-                        <input type="hidden" name="Date" class="form-control expense-edit-date-input" />
-                        <input type="hidden" name="CategoryId" class="form-control expense-edit-category-input" />
-                        <button type="submit" class="btn btn-primary btn-sm">Save</button>
-                        <button type="button" class="btn btn-secondary btn-sm btn-cancel">Cancel</button>
-                    </form>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
 
 @foreach (var budget in Model.Budgets)
 {
@@ -54,7 +14,7 @@
             <button class="btn btn-warning btn-sm btn-edit-budget" data-budget-id="@budget.Id">Edit Budget</button>
         </div>
         <div class="add-expense-form" data-budget-id="@budget.Id" style="display:none;">
-            <form asp-action="Create" method="post" class="form-inline">
+            <form asp-action="AddExpenseToBudget" method="post" class="form-inline">
                 <div class="form-group mt-2">
                     <label for="Amount">Amount</label>
                     <input type="text" name="Amount" class="form-control" />
@@ -99,6 +59,47 @@
                 <button type="button" class="btn btn-secondary btn-cancel-edit-budget mt-3">Cancel</button>
             </form>
         </div>
+        <hr />
+        <table class="table table-striped table-bordered">
+            <tbody>
+                @foreach (var expense in Model.Expenses.Where(e => e.BudgetId == budget.Id))
+                {
+                    <tr>
+                        <td>
+                            <span class="expense-amount">@expense.Amount</span>
+                            <input type="text" class="form-control expense-edit-amount" value="@expense.Amount" style="display:none;" />
+                        </td>
+                        <td>
+                            <span class="expense-date">@expense.Date.ToShortDateString()</span>
+                            <input type="date" class="form-control expense-edit-date" value="@expense.Date.ToString("yyyy-MM-dd")" style="display:none;" />
+                        </td>
+                        <td>
+                            <span class="expense-category">@expense.Category.Name</span>
+                            <select class="form-control expense-edit-category" style="display:none;">
+                                @foreach (var category in ViewBag.Categories)
+                                {
+                                    var selected = category.Value == expense.Category.Id.ToString() ? "selected" : "";
+                                    <option value="@category.Value" selected="@selected">@category.Text</option>
+                                }
+                            </select>
+                        </td>
+                        <td>
+                            <button class="btn btn-warning btn-sm btn-edit">Edit</button>
+                            <form asp-action="Delete" asp-route-id="@expense.Id" method="post" style="display:inline;">
+                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                            </form>
+                            <form asp-action="Edit" asp-route-id="@expense.Id" method="post" class="form-inline-edit" style="display:none;">
+                                <input type="hidden" name="Amount" class="form-control expense-edit-amount-input" />
+                                <input type="hidden" name="Date" class="form-control expense-edit-date-input" />
+                                <input type="hidden" name="CategoryId" class="form-control expense-edit-category-input" />
+                                <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                                <button type="button" class="btn btn-secondary btn-sm btn-cancel">Cancel</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
     </div>
 }
 
@@ -217,12 +218,22 @@
 <style>
     .budget-section {
         margin-bottom: 20px;
-        padding: 1rem;
+        padding: 1.5rem;
         border: 1px solid #ddd;
-        border-radius: 5px;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         display: inline-block;
         width: 49%;
         vertical-align: top;
+    }
+    .light-mode .budget-section{
+        background-color: #f9f9f9;
+    }
+    .dark-mode .budget-section{
+        background-color: #333333;
+    }
+    .dark-mode .table td {
+        color: #f9f9f9;
     }
     .budget-section:nth-child(even) {
         float: right;
@@ -231,13 +242,6 @@
         display: flex;
         gap: 10px;
         margin-bottom: 10px;
-    }
-    .table-striped tbody tr:nth-of-type(odd) {
-        background-color: rgba(0, 0, 0, 0.05);
-    }
-    .thead-dark th {
-        background-color: #343a40;
-        color: white;
     }
     .mt-3 {
         margin-top: 1rem;
@@ -255,7 +259,26 @@
         line-height: 1.5;
         border-radius: 0.2rem;
     }
-    .mar-riht-80{
+    .mar-riht-80 {
         margin-right: 80%;
+    }
+    .form-group {
+        margin-right: 10px;
+    }
+    .form-inline {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+    .form-inline .form-group {
+        margin-bottom: 10px;
+    }
+    .form-inline-edit {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+    .btn {
+        margin-right: 5px;
     }
 </style>
