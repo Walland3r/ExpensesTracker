@@ -6,4 +6,5 @@ public class User
     public required string Email { get; set; }
     public required string PasswordHash { get; set; }
     public ICollection<Budget> Budgets { get; set; } = new List<Budget>();
+    public ICollection<Category> Categories { get; set; } = new List<Category>();
 }

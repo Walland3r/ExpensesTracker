@@ -18,19 +18,17 @@ public class ExpensesController : Controller
 
     public async Task<IActionResult> Index()
     {
-        var expenses = await _context.Expenses
-            .Include(e => e.Category)
-            .Include(e => e.Budget)
-            .ToListAsync();
-        var categories = await _context.Categories.ToListAsync();
-        var budgets = await _context.Budgets.ToListAsync();
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+        var categories = await _context.Categories.Where(c => c.UserId == userId).ToListAsync();
         ViewBag.Categories = new SelectList(categories, "Id", "Name");
-        ViewBag.Budgets = new SelectList(budgets, "Id", "Title");
 
         var viewModel = new ExpenseViewModel
         {
-            Expenses = expenses,
-            Budgets = budgets
+            Expenses = await _context.Expenses
+                .Include(e => e.Category)
+                .Include(e => e.Budget)
+                .ToListAsync(),
+            Budgets = await _context.Budgets.Where(b => b.UserId == userId).ToListAsync()
         };
 
         return View(viewModel);
