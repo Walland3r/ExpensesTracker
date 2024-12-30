@@ -3,7 +3,9 @@ using ExpenseTracker.Models;
 using ExpenseTracker.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 
+[Authorize]
 public class CategoriesController : Controller
 {
     private readonly ExpenseTrackerContext _context;

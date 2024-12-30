@@ -3,7 +3,9 @@ using ExpenseTracker.Models;
 using ExpenseTracker.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Authorization;
 
+[Authorize]
 public class ExpensesController : Controller
 {
     private readonly ExpenseTrackerContext _context;
@@ -70,6 +72,7 @@ public class ExpensesController : Controller
     {
         expense.BudgetId = budgetId;
         expense.CategoryId = expense.CategoryId;
+        expense.Description = expense.Description;
         _context.Expenses.Add(expense);
         await _context.SaveChangesAsync();
 
@@ -98,6 +101,7 @@ public class ExpensesController : Controller
             return NotFound();
         }
 
+        expense.Description = expense.Description;
         _context.Update(expense);
         await _context.SaveChangesAsync();
         return RedirectToAction(nameof(Index));

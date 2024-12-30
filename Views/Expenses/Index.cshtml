@@ -44,6 +44,10 @@
                         }
                     </select>
                 </div>
+                <div class="form-group mt-2">
+                    <label for="Description">Description</label>
+                    <input type="text" name="Description" class="form-control" />
+                </div>
                 <input type="hidden" name="BudgetId" value="@budget.Id" />
                 <button type="submit" class="btn btn-primary mt-3">Add Expense</button>
                 <button type="button" class="btn btn-secondary btn-cancel-add-expense mt-3">Cancel</button>
@@ -82,6 +86,7 @@
                         <th class="text-center">Amount</th>
                         <th class="text-center">Date</th>
                         <th class="text-center">Category</th>
+                        <th class="text-center">Description</th>
                         <th class="text-center">Actions</th>
                     </tr>
                 </thead>
@@ -108,6 +113,10 @@
                                 </select>
                             </td>
                             <td class="text-center">
+                                <span class="expense-description">@expense.Description</span>
+                                <input type="text" class="form-control expense-edit-description" value="@expense.Description" style="display:none;" />
+                            </td>
+                            <td class="text-center">
                                 <button class="btn btn-warning btn-sm btn-edit">Edit</button>
                                 <form asp-action="DeleteExpense" asp-route-id="@expense.Id" method="post" style="display:inline;">
                                     <button type="submit" class="btn btn-danger btn-sm">Delete</button>
@@ -117,6 +126,7 @@
                                     <input type="hidden" name="Amount" class="form-control expense-edit-amount-input" />
                                     <input type="hidden" name="Date" class="form-control expense-edit-date-input" />
                                     <input type="hidden" name="CategoryId" class="form-control expense-edit-category-input" />
+                                    <input type="hidden" name="Description" class="form-control expense-edit-description-input" />
                                     <input type="hidden" name="BudgetId" value="@expense.BudgetId" />
                                     <button type="submit" class="btn btn-primary btn-sm">Save</button>
                                     <button type="button" class="btn btn-secondary btn-sm btn-cancel">Cancel</button>
@@ -194,6 +204,8 @@
                 row.querySelector('.expense-edit-date').style.display = 'block';
                 row.querySelector('.expense-category').style.display = 'none';
                 row.querySelector('.expense-edit-category').style.display = 'block';
+                row.querySelector('.expense-description').style.display = 'none';
+                row.querySelector('.expense-edit-description').style.display = 'block';
                 row.querySelector('.form-inline-edit').style.display = 'inline';
                 this.style.display = 'none';
             });
@@ -208,6 +220,8 @@
                 row.querySelector('.expense-edit-date').style.display = 'none';
                 row.querySelector('.expense-category').style.display = 'block';
                 row.querySelector('.expense-edit-category').style.display = 'none';
+                row.querySelector('.expense-description').style.display = 'block';
+                row.querySelector('.expense-edit-description').style.display = 'none';
                 row.querySelector('.form-inline-edit').style.display = 'none';
                 row.querySelector('.btn-edit').style.display = 'inline';
             });
@@ -219,9 +233,11 @@
                 const amountInput = row.querySelector('.expense-edit-amount');
                 const dateInput = row.querySelector('.expense-edit-date');
                 const categoryInput = row.querySelector('.expense-edit-category');
+                const descriptionInput = row.querySelector('.expense-edit-description');
                 this.querySelector('.expense-edit-amount-input').value = amountInput.value;
                 this.querySelector('.expense-edit-date-input').value = dateInput.value;
                 this.querySelector('.expense-edit-category-input').value = categoryInput.value;
+                this.querySelector('.expense-edit-description-input').value = descriptionInput.value;
             });
         });
 

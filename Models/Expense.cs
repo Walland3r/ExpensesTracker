@@ -10,8 +10,9 @@ public class Expense
         get => _date;
         set => _date = DateTime.SpecifyKind(value, DateTimeKind.Utc);
     }
+    public string? Description { get; set; }
     public required Category Category { get; set; }
-    public required int CategoryId { get; set; } // Foreign key for Category
+    public required int CategoryId { get; set; }
     public required Budget Budget { get; set; }
-    public required int BudgetId { get; set; } // Foreign key for Budget
+    public required int BudgetId { get; set; }
 }

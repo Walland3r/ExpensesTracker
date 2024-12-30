@@ -12,6 +12,7 @@ public class ExpenseTrackerContext : DbContext
     public required DbSet<Category> Categories { get; set; }
     public required DbSet<Budget> Budgets { get; set; }
     public required DbSet<Report> Reports { get; set; }
+    public required DbSet<User> Users { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
