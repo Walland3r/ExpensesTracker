@@ -62,6 +62,14 @@ public class ExpensesController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> EditBudget(int id, Budget budget)
     {
+        if (id != budget.Id)
+        {
+            return NotFound();
+        }
+
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        budget.UserId = int.Parse(userId); // Ensure UserId is set correctly
+
         _context.Update(budget);
         await _context.SaveChangesAsync();
         return RedirectToAction(nameof(Index));
@@ -72,8 +80,6 @@ public class ExpensesController : Controller
     public async Task<IActionResult> AddExpenseToBudget(int budgetId, Expense expense)
     {
         expense.BudgetId = budgetId;
-        expense.CategoryId = expense.CategoryId;
-        expense.Description = expense.Description;
         _context.Expenses.Add(expense);
         await _context.SaveChangesAsync();
 
@@ -102,7 +108,6 @@ public class ExpensesController : Controller
             return NotFound();
         }
 
-        expense.Description = expense.Description;
         _context.Update(expense);
         await _context.SaveChangesAsync();
         return RedirectToAction(nameof(Index));
