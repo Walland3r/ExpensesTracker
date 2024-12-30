@@ -7,7 +7,7 @@ public class Budget
     public string Title { get; set; }
     private DateTime _startDate;
     private DateTime _endDate;
-    public string UserId { get; set; }
+    public int UserId { get; set; }
 
     public DateTime StartDate
     {

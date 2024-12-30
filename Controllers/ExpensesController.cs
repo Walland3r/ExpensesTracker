@@ -40,7 +40,8 @@ public class ExpensesController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateBudget(Budget budget)
     {
-        budget.UserId = User.FindFirstValue(ClaimTypes.NameIdentifier); // Add this line
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        budget.UserId = int.Parse(userId); // Ensure UserId is set correctly
         _context.Budgets.Add(budget);
         await _context.SaveChangesAsync();
         return RedirectToAction(nameof(Index));

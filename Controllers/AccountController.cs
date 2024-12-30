@@ -39,6 +39,7 @@ public class AccountController : Controller
             {
                 new Claim(ClaimTypes.Name, user.Name),
                 new Claim(ClaimTypes.Email, user.Email),
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
             };
 
             var claimsIdentity = new ClaimsIdentity(
