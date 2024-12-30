@@ -4,6 +4,7 @@ using ExpenseTracker.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 [Authorize]
 public class ExpensesController : Controller
@@ -39,6 +40,7 @@ public class ExpensesController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateBudget(Budget budget)
     {
+        budget.UserId = User.FindFirstValue(ClaimTypes.NameIdentifier); // Add this line
         _context.Budgets.Add(budget);
         await _context.SaveChangesAsync();
         return RedirectToAction(nameof(Index));

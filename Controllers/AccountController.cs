@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Cryptography;
+using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 
 [Authorize]
 public class AccountController : Controller
@@ -30,12 +32,13 @@ public class AccountController : Controller
     public async Task<IActionResult> Index(LoginViewModel model)
     {
         var user = await _context.Users
-            .FirstOrDefaultAsync(u => u.Email == model.Email && u.Password == model.Password);
-        if (user != null)
+            .FirstOrDefaultAsync(u => u.Email == model.Email);
+        if (user != null && VerifyPassword(model.Password, user.PasswordHash))
         {
             var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.Name, user.Email)
+                new Claim(ClaimTypes.Name, user.Name),
+                new Claim(ClaimTypes.Email, user.Email),
             };
 
             var claimsIdentity = new ClaimsIdentity(
@@ -64,39 +67,25 @@ public class AccountController : Controller
         if (ModelState.IsValid)
         {
             var userExists = await _context.Users.AnyAsync(u => u.Email == model.Email);
-            if (!userExists)
+            if (userExists)
+            {
+                TempData["ErrorMessage"] = "User already exists.";
+                ModelState.AddModelError(string.Empty, "User already exists.");
+            }
+            else
             {
                 var user = new User
                 {
                     Name = model.Name,
                     Email = model.Email,
-                    Password = model.Password
+                    PasswordHash = HashPassword(model.Password)
                 };
 
                 _context.Users.Add(user);
                 await _context.SaveChangesAsync();
 
-                var claims = new List<Claim>
-                {
-                    new Claim(ClaimTypes.Name, user.Email)
-                };
-
-                var claimsIdentity = new ClaimsIdentity(
-                    claims, CookieAuthenticationDefaults.AuthenticationScheme);
-
-                var authProperties = new AuthenticationProperties
-                {
-                    IsPersistent = model.RememberMe
-                };
-
-                await HttpContext.SignInAsync(
-                    CookieAuthenticationDefaults.AuthenticationScheme,
-                    new ClaimsPrincipal(claimsIdentity),
-                    authProperties);
-
-                return RedirectToAction("Index", "Expenses");
+                TempData["SuccessMessage"] = "User successfully created.";
             }
-            ModelState.AddModelError(string.Empty, "User already exists.");
         }
         return View("Index", model);
     }
@@ -107,5 +96,44 @@ public class AccountController : Controller
     {
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         return RedirectToAction("Index");
+    }
+
+    private string HashPassword(string password)
+    {
+        byte[] salt = new byte[128 / 8];
+        using (var rng = RandomNumberGenerator.Create())
+        {
+            rng.GetBytes(salt);
+        }
+
+        string hashed = Convert.ToBase64String(KeyDerivation.Pbkdf2(
+            password: password,
+            salt: salt,
+            prf: KeyDerivationPrf.HMACSHA256,
+            iterationCount: 10000,
+            numBytesRequested: 256 / 8));
+
+        return $"{Convert.ToBase64String(salt)}.{hashed}";
+    }
+
+    private bool VerifyPassword(string password, string storedHash)
+    {
+        var parts = storedHash.Split('.');
+        if (parts.Length != 2)
+        {
+            return false;
+        }
+
+        var salt = Convert.FromBase64String(parts[0]);
+        var storedPasswordHash = parts[1];
+
+        string hashed = Convert.ToBase64String(KeyDerivation.Pbkdf2(
+            password: password,
+            salt: salt,
+            prf: KeyDerivationPrf.HMACSHA256,
+            iterationCount: 10000,
+            numBytesRequested: 256 / 8));
+
+        return hashed == storedPasswordHash;
     }
 }

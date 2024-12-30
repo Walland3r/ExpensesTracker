@@ -1,4 +1,6 @@
-﻿<!DOCTYPE html>
+﻿@using System.Security.Claims
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -20,13 +22,22 @@
             background-color: #333333 !important;
             color: #ECEFF1;
         }
-        body.dark-mode .navbar a {
+        body.dark-mode .navbar a, body.dark-mode .navbar span{
             color: #ECEFF1 !important;
+        }
+        .btn-logout {
+            color: #222222;
+        }
+        body.dark-mode .btn-logout {
+            color: #ECEFF1;
+        }
+        body {
+            overflow: hidden;
         }
     </style>
 </head>
 <body class="light-mode">
-    @if (!Context.Request.Path.Value.Contains("Account/Index"))
+    @if (!Context.Request.Path.Value.Contains("Account/Index") && Context.Request.Path.Value != "/")
     {
         <header>
             <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
@@ -48,8 +59,11 @@
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Reports" asp-action="Index">Reports</a>
                             </li>
                         </ul>
+                        <span class="navbar-text text-dark">
+                            Hello @User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value
+                        </span>
                         <form class="form-inline" asp-area="" asp-controller="Account" asp-action="Logout" method="post">
-                            <button type="submit" class="btn btn-link nav-link text-dark">Logout</button>
+                            <button type="submit" class="btn btn-link nav-link btn-logout">Logout</button>
                         </form>
                         <button id="theme-toggle" class="btn btn-secondary">Dark Mode</button>
                     </div>
@@ -63,7 +77,7 @@
         </main>
     </div>
 
-    @if (!Context.Request.Path.Value.Contains("Account/Index"))
+    @if (!Context.Request.Path.Value.Contains("Account/Index") && Context.Request.Path.Value != "/")
     {
         <footer class="border-top footer text-muted"> &copy; 2024 - ExpenseTracker </footer>
     }
