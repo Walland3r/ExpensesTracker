@@ -3,7 +3,10 @@ using ExpenseTracker.Models;
 using ExpenseTracker.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
+[Authorize]
 public class CategoriesController : Controller
 {
     private readonly ExpenseTrackerContext _context;
@@ -15,7 +18,11 @@ public class CategoriesController : Controller
 
     public async Task<IActionResult> Index()
     {
-        var categories = await _context.Categories.AsNoTracking().ToListAsync();
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+        var categories = await _context.Categories
+            .Where(c => c.UserId == userId)
+            .AsNoTracking()
+            .ToListAsync();
         return View(categories);
     }
 
@@ -24,10 +31,11 @@ public class CategoriesController : Controller
     {
         if (string.IsNullOrEmpty(category.Name))
         {
-            ModelState.AddModelError("Name", "The Name field is required.");
-            return View(category);
+            TempData["ErrorMessage"] = "The Name field is required.";
+            return RedirectToAction(nameof(Index));
         }
 
+        category.UserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
         _context.Add(category);
         await _context.SaveChangesAsync();
         return RedirectToAction(nameof(Index));
@@ -38,12 +46,12 @@ public class CategoriesController : Controller
     {
         if (string.IsNullOrEmpty(name))
         {
-            ModelState.AddModelError("Name", "The Name field is required.");
-            return View(new Category { Id = id, Name = name });
+            TempData["ErrorMessage"] = "The Name field is required.";
+            return RedirectToAction(nameof(Index));
         }
 
         var category = await _context.Categories.FindAsync(id);
-        if (category == null)
+        if (category == null || category.UserId != int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)))
         {
             return NotFound();
         }
@@ -58,7 +66,7 @@ public class CategoriesController : Controller
     public async Task<IActionResult> Delete(int id)
     {
         var category = await _context.Categories.FindAsync(id);
-        if (category != null)
+        if (category != null && category.UserId == int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)))
         {
             _context.Categories.Remove(category);
             await _context.SaveChangesAsync();

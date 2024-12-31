@@ -3,68 +3,67 @@ using ExpenseTracker.Models;
 using ExpenseTracker.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
+[Authorize]
 public class ExpensesController : Controller
 {
     private readonly ExpenseTrackerContext _context;
 
-    public ExpensesController(ExpenseTrackerContext context)
+    public ExpensesController(ExpenseTrackerContext context, ILogger<ExpensesController> logger)
     {
         _context = context;
     }
 
     public async Task<IActionResult> Index()
     {
-        var expenses = await _context.Expenses.Include(e => e.Category).ToListAsync();
-        var categories = await _context.Categories.ToListAsync();
-        var budgets = await _context.Budgets.ToListAsync();
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+        var categories = await _context.Categories.Where(c => c.UserId == userId).ToListAsync();
         ViewBag.Categories = new SelectList(categories, "Id", "Name");
 
         var viewModel = new ExpenseViewModel
         {
-            Expenses = expenses,
-            Budgets = budgets
+            Expenses = await _context.Expenses
+                .Include(e => e.Category)
+                .Include(e => e.Budget)
+                .ToListAsync(),
+            Budgets = await _context.Budgets.Where(b => b.UserId == userId).ToListAsync()
         };
 
         return View(viewModel);
-    }
-
-    public IActionResult Create()
-    {
-        var categories = _context.Categories.ToList();
-        var budgets = _context.Budgets.ToList();
-        ViewBag.IsCategoryEmpty = !categories.Any();
-        ViewBag.Categories = new SelectList(categories, "Id", "Name");
-        ViewBag.Budgets = new SelectList(budgets, "Id", "Title");
-        return View();
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(Expense expense)
-    {
-        var categories = _context.Categories.ToList();
-        var budgets = _context.Budgets.ToList();
-        ViewBag.IsCategoryEmpty = !categories.Any();
-
-        // Detach each Category entity instance
-        foreach (var category in categories)
-        {
-            _context.Entry(category).State = EntityState.Detached;
-        }
-        _context.Add(expense);
-        await _context.SaveChangesAsync();
-        return RedirectToAction(nameof(Index));
-
-        ViewBag.Categories = new SelectList(categories, "Id", "Name");
-        ViewBag.Budgets = new SelectList(budgets, "Id", "Title");
-        return View(expense);
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateBudget(Budget budget)
     {
+        if (string.IsNullOrEmpty(budget.Title) || budget.Amount <= 0 || budget.StartDate == default || budget.EndDate == default)
+        {
+            TempData["ErrorMessage"] = "All fields are required and must be valid.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        if (!decimal.TryParse(budget.Amount.ToString(), out decimal amount))
+        {
+            TempData["ErrorMessage"] = "Budget amount must be a number.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        if (amount <= 0)
+        {
+            TempData["ErrorMessage"] = "Budget amount has to be greater than 0.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        if (budget.StartDate >= budget.EndDate)
+        {
+            TempData["ErrorMessage"] = "Start Date must be earlier than End Date.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        budget.UserId = int.Parse(userId);
         _context.Budgets.Add(budget);
         await _context.SaveChangesAsync();
         return RedirectToAction(nameof(Index));
@@ -91,28 +90,119 @@ public class ExpensesController : Controller
         {
             return NotFound();
         }
-        try
+
+        if (string.IsNullOrEmpty(budget.Title) || budget.Amount <= 0 || budget.StartDate == default || budget.EndDate == default)
         {
-            _context.Update(budget);
-            await _context.SaveChangesAsync();
+            TempData["ErrorMessage"] = "All fields are required and must be valid.";
+            return RedirectToAction(nameof(Index));
         }
-        catch (DbUpdateConcurrencyException)
+
+        if (!decimal.TryParse(budget.Amount.ToString(), out decimal amount))
         {
-            if (!BudgetExists(budget.Id))
-            {
-                return NotFound();
-            }
-            else
-            {
-                throw;
-            }
+            TempData["ErrorMessage"] = "Amount must be a number.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        if (amount <= 0)
+        {
+            TempData["ErrorMessage"] = "Amount has to be greater than 0.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        if (budget.StartDate >= budget.EndDate)
+        {
+            TempData["ErrorMessage"] = "Start Date must be earlier than End Date.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        budget.UserId = int.Parse(userId);
+
+        _context.Update(budget);
+        await _context.SaveChangesAsync();
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AddExpenseToBudget(int budgetId, Expense expense)
+    {
+        if (expense.Amount <= 0)
+        {
+            TempData["ErrorMessage"] = "Expense amount must be greater than 0.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        var budget = await _context.Budgets.FindAsync(budgetId);
+        if (expense.Date < budget.StartDate || expense.Date > budget.EndDate)
+        {
+            TempData["ErrorMessage"] = "Expense date must be within the budget's start and end dates.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        if (string.IsNullOrEmpty(expense.Description) || expense.CategoryId == 0)
+        {
+            TempData["ErrorMessage"] = "All fields are required.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        expense.BudgetId = budgetId;
+        _context.Expenses.Add(expense);
+        await _context.SaveChangesAsync();
+
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteExpense(int id)
+    {
+        var expense = await _context.Expenses.FindAsync(id);
+        if (expense != null)
+        {
+            _context.Expenses.Remove(expense);
+            await _context.SaveChangesAsync();
         }
         return RedirectToAction(nameof(Index));
     }
 
-    private bool BudgetExists(int id)
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditExpense(int id, Expense expense)
     {
-        return _context.Budgets.Any(e => e.Id == id);
+        if (id != expense.Id)
+        {
+            return NotFound();
+        }
+
+        if (expense.Amount <= 0)
+        {
+            TempData["ErrorMessage"] = "Expense amount must be greater than 0.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        var budget = await _context.Budgets.FindAsync(expense.BudgetId);
+        if (budget == null)
+        {
+            TempData["ErrorMessage"] = "Budget not found.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        if (expense.Date < budget.StartDate || expense.Date > budget.EndDate)
+        {
+            TempData["ErrorMessage"] = "Expense date must be within the budget's start and end dates.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        if (string.IsNullOrEmpty(expense.Description) || expense.CategoryId == 0)
+        {
+            TempData["ErrorMessage"] = "All fields are required.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        _context.Update(expense);
+        await _context.SaveChangesAsync();
+        return RedirectToAction(nameof(Index));
     }
 }
 

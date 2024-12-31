@@ -1,0 +1,126 @@
+@model ExpenseTracker.Models.LoginViewModel
+
+<div class="d-flex justify-content-center align-items-center min-vh-100">
+    <div class="card shadow-lg p-4 w-50">
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger" role="alert">
+                @TempData["ErrorMessage"]
+            </div>
+        }
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success" role="alert">
+                @TempData["SuccessMessage"]
+            </div>
+        }
+        <div class="text-center mb-4">
+            <button id="loginBtn" class="btn btn-secondary" onclick="showLogin()">Login</button>
+            <button id="registerBtn" class="btn btn-light" onclick="showRegister()">Register</button>
+        </div>
+
+        <div id="loginForm">
+            <h2 class="text-center mb-4">Login</h2>
+            <form asp-action="Index" method="post">
+                <div class="form-group mb-3">
+                    <label asp-for="Email" class="font-weight-bold"></label>
+                    <input asp-for="Email" class="form-control" />
+                    <span asp-validation-for="Email" class="text-danger"></span>
+                </div>
+                <div class="form-group mb-3">
+                    <label asp-for="Password" class="font-weight-bold"></label>
+                    <input asp-for="Password" type="password" class="form-control" />
+                    <span asp-validation-for="Password" class="text-danger"></span>
+                </div>
+                <div class="form-group form-check mb-3">
+                    <input asp-for="RememberMe" class="form-check-input" />
+                    <label asp-for="RememberMe" class="form-check-label"></label>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Login</button>
+            </form>
+        </div>
+
+        <div id="registerForm" style="display: none;">
+            <h2 class="text-center mb-4">Register</h2>
+            <form asp-action="Register" method="post">
+                <div class="form-group mb-3">
+                    <label asp-for="Name" class="font-weight-bold"></label>
+                    <input asp-for="Name" class="form-control" />
+                    <span asp-validation-for="Name" class="text-danger"></span>
+                </div>
+                <div class="form-group mb-3">
+                    <label asp-for="Email" class="font-weight-bold"></label>
+                    <input asp-for="Email" class="form-control" />
+                    <span asp-validation-for="Email" class="text-danger"></span>
+                </div>
+                <div class="form-group mb-3">
+                    <label asp-for="Password" class="font-weight-bold"></label>
+                    <input asp-for="Password" type="password" class="form-control" />
+                    <span asp-validation-for="Password" class="text-danger"></span>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Register</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        function showLogin() {
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('registerForm').style.display = 'none';
+            document.getElementById('loginBtn').classList.add('btn-secondary');
+            document.getElementById('loginBtn').classList.remove('btn-light');
+            document.getElementById('registerBtn').classList.add('btn-light');
+            document.getElementById('registerBtn').classList.remove('btn-secondary');
+        }
+
+        function showRegister() {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('registerForm').style.display = 'block';
+            document.getElementById('loginBtn').classList.add('btn-light');
+            document.getElementById('loginBtn').classList.remove('btn-secondary');
+            document.getElementById('registerBtn').classList.add('btn-secondary');
+            document.getElementById('registerBtn').classList.remove('btn-light');
+        }
+    </script>
+    <style>
+        body.dark-mode .card {
+            background-color: #333333;
+            color: #ECEFF1;
+        }
+        body.dark-mode .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+        body.dark-mode .btn-secondary {
+            background-color: #6c757d;
+            border-color: #6c757d;
+        }
+        body.dark-mode .btn-light {
+            background-color: #f8f9fa;
+            border-color: #f8f9fa;
+            color: #212529;
+        }
+        body.dark-mode .form-control {
+            background-color: #444444;
+            color: #ECEFF1;
+            border-color: #555555;
+        }
+        body.dark-mode .form-check-input {
+            background-color: #444444;
+            border-color: #555555;
+        }
+        body.dark-mode .alert-danger {
+            background-color: #dc3545;
+            border-color: #dc3545;
+            color: #ffffff;
+        }
+        body.dark-mode .alert-success {
+            background-color: #28a745;
+            border-color: #28a745;
+            color: #ffffff;
+        }
+    </style>
+}

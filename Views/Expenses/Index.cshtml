@@ -1,60 +1,41 @@
 @model ExpenseTracker.Models.ExpenseViewModel
+@using System.Security.Claims;
 
-<h2 class="text-center my-4">Your Budgets</h2>
-<table class="table table-striped table-bordered">
-    <tbody>
-        @foreach (var expense in Model.Expenses)
-        {
-            <tr>
-                <td>
-                    <span class="expense-amount">@expense.Amount</span>
-                    <input type="text" class="form-control expense-edit-amount" value="@expense.Amount" style="display:none;" />
-                </td>
-                <td>
-                    <span class="expense-date">@expense.Date.ToShortDateString()</span>
-                    <input type="date" class="form-control expense-edit-date" value="@expense.Date.ToString("yyyy-MM-dd")" style="display:none;" />
-                </td>
-                <td>
-                    <span class="expense-category">@expense.Category.Name</span>
-                    <select class="form-control expense-edit-category" style="display:none;">
-                        @foreach (var category in ViewBag.Categories)
-                        {
-                            var selected = category.Value == expense.Category.Id.ToString() ? "selected" : "";
-                            <option value="@category.Value" selected="@selected">@category.Text</option>
-                        }
-                    </select>
-                </td>
-                <td>
-                    <button class="btn btn-warning btn-sm btn-edit">Edit</button>
-                    <form asp-action="Delete" asp-route-id="@expense.Id" method="post" style="display:inline;">
-                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                    </form>
-                    <form asp-action="Edit" asp-route-id="@expense.Id" method="post" class="form-inline-edit" style="display:none;">
-                        <input type="hidden" name="Amount" class="form-control expense-edit-amount-input" />
-                        <input type="hidden" name="Date" class="form-control expense-edit-date-input" />
-                        <input type="hidden" name="CategoryId" class="form-control expense-edit-category-input" />
-                        <button type="submit" class="btn btn-primary btn-sm">Save</button>
-                        <button type="button" class="btn btn-secondary btn-sm btn-cancel">Cancel</button>
-                    </form>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+<h1 class="text-center my-4">Your Budgets</h1>
 
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="budget-container">
 @foreach (var budget in Model.Budgets)
 {
     <div class="budget-section">
-        <h3 class='mb-4'>@budget.Title</h3>
+        <h2 class='mb-4'>@budget.Title</h2>
+        <p style="display:inline-block;">Start Date: @budget.StartDate.ToShortDateString()</p>
+        <p style="display:inline-block; float:right;">End Date: @budget.EndDate.ToShortDateString()</p>
+        @{
+            var totalExpenses = Model.Expenses.Where(e => e.BudgetId == budget.Id).Sum(e => e.Amount);
+            var fundsRemaining = budget.Amount - totalExpenses;
+            var percentageUsed = (totalExpenses / budget.Amount) * 100;
+        }
+        <p style="text-align: center;">Funds remaining: @fundsRemaining.ToString("C")</p>
+        <div class="progress">
+            <div class="progress-bar" role="progressbar" style="width: @percentageUsed%;" aria-valuenow="@percentageUsed" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
         <div class="budget-actions">
             <button class="btn btn-success btn-sm btn-show-add-expense" data-budget-id="@budget.Id">Add New Expense</button>
-            <form asp-action="DeleteBudget" asp-route-id="@budget.Id" method="post" style="display:inline;">
+            <form asp-action="DeleteBudget" asp-route-id="@budget.Id" method="post" style="display:inline-block;">
                 <button type="submit" class="btn btn-danger btn-sm">Delete Budget</button>
             </form>
             <button class="btn btn-warning btn-sm btn-edit-budget" data-budget-id="@budget.Id">Edit Budget</button>
         </div>
         <div class="add-expense-form" data-budget-id="@budget.Id" style="display:none;">
-            <form asp-action="Create" method="post" class="form-inline">
+            <form asp-action="AddExpenseToBudget" method="post">
                 <div class="form-group mt-2">
                     <label for="Amount">Amount</label>
                     <input type="text" name="Amount" class="form-control" />
@@ -71,6 +52,10 @@
                             <option value="@category.Value">@category.Text</option>
                         }
                     </select>
+                </div>
+                <div class="form-group mt-2">
+                    <label for="Description">Description</label>
+                    <input type="text" name="Description" class="form-control" />
                 </div>
                 <input type="hidden" name="BudgetId" value="@budget.Id" />
                 <button type="submit" class="btn btn-primary mt-3">Add Expense</button>
@@ -95,38 +80,103 @@
                     <label for="EndDate">End Date</label>
                     <input type="date" name="EndDate" class="form-control" value="@budget.EndDate.ToString("yyyy-MM-dd")" />
                 </div>
+                <input type="hidden" name="UserId" value="@User.FindFirstValue(ClaimTypes.NameIdentifier)" />
                 <button type="submit" class="btn btn-primary mt-3">Save</button>
                 <button type="button" class="btn btn-secondary btn-cancel-edit-budget mt-3">Cancel</button>
             </form>
         </div>
+        @{
+            var budgetExpenses = Model.Expenses.Where(e => e.BudgetId == budget.Id).ToList();
+        }
+        @if (budgetExpenses.Any())
+        {
+            <table class="table table-striped table-bordered">
+                <thead class="thead-dark">
+                    <tr>
+                        <th class="text-center">Amount</th>
+                        <th class="text-center">Date</th>
+                        <th class="text-center">Category</th>
+                        <th class="text-center">Description</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var expense in budgetExpenses)
+                    {
+                        <tr>
+                            <td class="text-center">
+                                <span class="expense-amount">@expense.Amount</span>
+                                <input type="text" class="form-control expense-edit-amount" value="@expense.Amount" style="display:none;" />
+                            </td>
+                            <td class="text-center">
+                                <span class="expense-date">@expense.Date.ToShortDateString()</span>
+                                <input type="date" class="form-control expense-edit-date" value="@expense.Date.ToString("yyyy-MM-dd")" style="display:none;" />
+                            </td>
+                            <td class="text-center">
+                                <span class="expense-category">@expense.Category.Name</span>
+                                <select class="form-control expense-edit-category" style="display:none;">
+                                    @foreach (var category in ViewBag.Categories)
+                                    {
+                                        var selected = category.Value == expense.Category.Id.ToString() ? "selected" : "";
+                                        <option value="@category.Value" selected="@selected">@category.Text</option>
+                                    }
+                                </select>
+                            </td>
+                            <td class="text-center">
+                                <span class="expense-description">@expense.Description</span>
+                                <input type="text" class="form-control expense-edit-description" value="@expense.Description" style="display:none;" />
+                            </td>
+                            <td class="text-center">
+                                <button class="btn btn-warning btn-sm btn-edit">Edit</button>
+                                <form asp-action="DeleteExpense" asp-route-id="@expense.Id" method="post" style="display:inline;">
+                                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                </form>
+                                <form asp-action="EditExpense" asp-route-id="@expense.Id" method="post" class="form-inline-edit" style="display:none;">
+                                    <input type="hidden" name="Id" value="@expense.Id" />
+                                    <input type="hidden" name="Amount" class="form-control expense-edit-amount-input" />
+                                    <input type="hidden" name="Date" class="form-control expense-edit-date-input" />
+                                    <input type="hidden" name="CategoryId" class="form-control expense-edit-category-input" />
+                                    <input type="hidden" name="Description" class="form-control expense-edit-description-input" />
+                                    <input type="hidden" name="BudgetId" value="@expense.BudgetId" />
+                                    <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                                    <button type="button" class="btn btn-secondary btn-sm btn-cancel">Cancel</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
     </div>
 }
 
-<div class="budget-section" id="add-budget-form" style="display:none;">
-    <h3>Add New Budget</h3>
-    <form asp-action="CreateBudget" method="post" class="form-inline">
-        <div class="form-group mt-2">
-            <label for="Title">Title</label>
-            <input type="text" name="Title" class="form-control" />
-        </div>
-        <div class="form-group mt-2">
-            <label for="Amount">Amount</label>
-            <input type="text" name="Amount" class="form-control" />
-        </div>
-        <div class="form-group mt-2">
-            <label for="StartDate">Start Date</label>
-            <input type="date" name="StartDate" class="form-control" />
-        </div>
-        <div class="form-group mt-2">
-            <label for="EndDate">End Date</label>
-            <input type="date" name="EndDate" class="form-control" />
-        </div>
-        <button type="submit" class="btn btn-primary mt-3">Add Budget</button>
-        <button type="button" id="btn-cancel-add-budget" class="btn btn-secondary mt-3">Cancel</button>
-    </form>
+    <div id="add-budget-form" class="budget-section" style="display:none;">
+        <h3>Add New Budget</h3>
+        <form asp-action="CreateBudget" method="post">
+            <div class="form-group mt-2">
+                <label for="Title">Title</label>
+                <input type="text" name="Title" class="form-control" />
+            </div>
+            <div class="form-group mt-2">
+                <label for="Amount">Amount</label>
+                <input type="text" name="Amount" class="form-control" />
+            </div>
+            <div class="form-group mt-2">
+                <label for="StartDate">Start Date</label>
+                <input type="date" name="StartDate" class="form-control" />
+            </div>
+            <div class="form-group mt-2">
+                <label for="EndDate">End Date</label>
+                <input type="date" name="EndDate" class="form-control" />
+            </div>
+            <button type="submit" class="btn btn-primary mt-3">Add Budget</button>
+            <button type="button" id="btn-cancel-add-budget" class="btn btn-secondary mt-3">Cancel</button>
+        </form>
+    </div>
 </div>
 
-<button id="btn-show-add-budget" class="btn btn-success mt-3 mar-riht-80">Add New Budget</button>
+<button id="btn-show-add-budget" class="btn btn-success mt-3">Add New Budget</button>
+
 
 @section Scripts {
     <script>
@@ -142,18 +192,18 @@
             button.addEventListener('click', function() {
                 const form = this.closest('.add-expense-form');
                 form.style.display = 'none';
-                document.querySelector(`.btn-show-add-expense[data-budget-id="${form.getAttribute('data-budget-id')}"]`).style.display = 'block';
+                document.querySelector(`.btn-show-add-expense[data-budget-id="${form.getAttribute('data-budget-id')}"]`).style.display = 'inline-block';
             });
         });
 
         document.getElementById('btn-show-add-budget').addEventListener('click', function() {
-            document.getElementById('add-budget-form').style.display = 'block';
+            document.getElementById('add-budget-form').style.display = 'inline-block';
             this.style.display = 'none';
         });
 
         document.getElementById('btn-cancel-add-budget').addEventListener('click', function() {
             document.getElementById('add-budget-form').style.display = 'none';
-            document.getElementById('btn-show-add-budget').style.display = 'block';
+            document.getElementById('btn-show-add-budget').style.display = 'inline-block';
         });
 
         document.querySelectorAll('.btn-edit').forEach(button => {
@@ -165,6 +215,8 @@
                 row.querySelector('.expense-edit-date').style.display = 'block';
                 row.querySelector('.expense-category').style.display = 'none';
                 row.querySelector('.expense-edit-category').style.display = 'block';
+                row.querySelector('.expense-description').style.display = 'none';
+                row.querySelector('.expense-edit-description').style.display = 'block';
                 row.querySelector('.form-inline-edit').style.display = 'inline';
                 this.style.display = 'none';
             });
@@ -179,6 +231,8 @@
                 row.querySelector('.expense-edit-date').style.display = 'none';
                 row.querySelector('.expense-category').style.display = 'block';
                 row.querySelector('.expense-edit-category').style.display = 'none';
+                row.querySelector('.expense-description').style.display = 'block';
+                row.querySelector('.expense-edit-description').style.display = 'none';
                 row.querySelector('.form-inline-edit').style.display = 'none';
                 row.querySelector('.btn-edit').style.display = 'inline';
             });
@@ -190,9 +244,11 @@
                 const amountInput = row.querySelector('.expense-edit-amount');
                 const dateInput = row.querySelector('.expense-edit-date');
                 const categoryInput = row.querySelector('.expense-edit-category');
+                const descriptionInput = row.querySelector('.expense-edit-description');
                 this.querySelector('.expense-edit-amount-input').value = amountInput.value;
                 this.querySelector('.expense-edit-date-input').value = dateInput.value;
                 this.querySelector('.expense-edit-category-input').value = categoryInput.value;
+                this.querySelector('.expense-edit-description-input').value = descriptionInput.value;
             });
         });
 
@@ -208,54 +264,61 @@
             button.addEventListener('click', function() {
                 const form = this.closest('.edit-budget-form');
                 form.style.display = 'none';
-                document.querySelector(`.btn-edit-budget[data-budget-id="${form.getAttribute('data-budget-id')}"]`).style.display = 'block';
+                document.querySelector(`.btn-edit-budget[data-budget-id="${form.getAttribute('data-budget-id')}"]`).style.display = 'inline-block';
             });
         });
     </script>
 }
 
 <style>
+    .budget-container {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
     .budget-section {
         margin-bottom: 20px;
-        padding: 1rem;
+        padding: 1.5rem;
         border: 1px solid #ddd;
-        border-radius: 5px;
-        display: inline-block;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         width: 49%;
-        vertical-align: top;
     }
-    .budget-section:nth-child(even) {
-        float: right;
+    .budget-section table{
+        margin-top: 2rem;
     }
-    .budget-actions {
-        display: flex;
-        gap: 10px;
-        margin-bottom: 10px;
+    .light-mode .budget-section {
+        background-color: #f9f9f9;
     }
-    .table-striped tbody tr:nth-of-type(odd) {
-        background-color: rgba(0, 0, 0, 0.05);
+    .dark-mode .budget-section {
+        background-color: #333333;
+    }
+    .dark-mode .table td {
+        color: #f9f9f9;
     }
     .thead-dark th {
         background-color: #343a40;
-        color: white;
+        color: #fff;
     }
-    .mt-3 {
-        margin-top: 1rem;
+    .progress {
+        height: 2rem;
+        margin: 1rem 0 2rem 0;
+        background: linear-gradient(to left, red, yellow, green);
+        transform: scaleX(-1)
     }
-    .text-center {
-        text-align: center;
+    .progress-bar {
+        background-color: #ddd;
     }
-    .my-4 {
-        margin-top: 1.5rem;
-        margin-bottom: 1.5rem;
+    body.dark-mode .form-control {
+        background-color: #444444;
+        color: #ECEFF1;
+        border-color: #555555;
     }
-    .btn-sm {
-        padding: 0.25rem 0.5rem;
-        font-size: 0.875rem;
-        line-height: 1.5;
-        border-radius: 0.2rem;
-    }
-    .mar-riht-80{
-        margin-right: 80%;
+    body.dark-mode .form-check-input {
+        background-color: #444444;
+        border-color: #555555;
     }
 </style>
