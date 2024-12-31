@@ -38,6 +38,24 @@ public class ExpensesController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateBudget(Budget budget)
     {
+        if (!decimal.TryParse(budget.Amount.ToString(), out decimal amount))
+        {
+            TempData["ErrorMessage"] = "Budget amount must be a number.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        if (amount <= 0)
+        {
+            TempData["ErrorMessage"] = "Budget amount has to be greater than 0.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        if (budget.StartDate >= budget.EndDate)
+        {
+            TempData["ErrorMessage"] = "Start Date must be earlier than End Date.";
+            return RedirectToAction(nameof(Index));
+        }
+
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         budget.UserId = int.Parse(userId);
         _context.Budgets.Add(budget);
@@ -65,6 +83,24 @@ public class ExpensesController : Controller
         if (id != budget.Id)
         {
             return NotFound();
+        }
+
+        if (!decimal.TryParse(budget.Amount.ToString(), out decimal amount))
+        {
+            TempData["ErrorMessage"] = "Amount must be a number.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        if (amount <= 0)
+        {
+            TempData["ErrorMessage"] = "Amount has to be greater than 0.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        if (budget.StartDate >= budget.EndDate)
+        {
+            TempData["ErrorMessage"] = "Start Date must be earlier than End Date.";
+            return RedirectToAction(nameof(Index));
         }
 
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);

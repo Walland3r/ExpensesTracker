@@ -3,6 +3,13 @@
 
 <h1 class="text-center my-4">Your Budgets</h1>
 
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["ErrorMessage"]
+    </div>
+}
+
 <div class="budget-container">
 @foreach (var budget in Model.Budgets)
 {
@@ -303,5 +310,14 @@
     }
     .progress-bar {
         background-color: #ddd;
+    }
+    body.dark-mode .form-control {
+        background-color: #444444;
+        color: #ECEFF1;
+        border-color: #555555;
+    }
+    body.dark-mode .form-check-input {
+        background-color: #444444;
+        border-color: #555555;
     }
 </style>
