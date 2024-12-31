@@ -39,7 +39,7 @@ public class ExpensesController : Controller
     public async Task<IActionResult> CreateBudget(Budget budget)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        budget.UserId = int.Parse(userId); // Ensure UserId is set correctly
+        budget.UserId = int.Parse(userId);
         _context.Budgets.Add(budget);
         await _context.SaveChangesAsync();
         return RedirectToAction(nameof(Index));
@@ -68,7 +68,7 @@ public class ExpensesController : Controller
         }
 
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        budget.UserId = int.Parse(userId); // Ensure UserId is set correctly
+        budget.UserId = int.Parse(userId);
 
         _context.Update(budget);
         await _context.SaveChangesAsync();

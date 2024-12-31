@@ -141,33 +141,34 @@
         }
     </div>
 }
+
+    <div id="add-budget-form" class="budget-section" style="display:none;">
+        <h3>Add New Budget</h3>
+        <form asp-action="CreateBudget" method="post">
+            <div class="form-group mt-2">
+                <label for="Title">Title</label>
+                <input type="text" name="Title" class="form-control" />
+            </div>
+            <div class="form-group mt-2">
+                <label for="Amount">Amount</label>
+                <input type="text" name="Amount" class="form-control" />
+            </div>
+            <div class="form-group mt-2">
+                <label for="StartDate">Start Date</label>
+                <input type="date" name="StartDate" class="form-control" />
+            </div>
+            <div class="form-group mt-2">
+                <label for="EndDate">End Date</label>
+                <input type="date" name="EndDate" class="form-control" />
+            </div>
+            <button type="submit" class="btn btn-primary mt-3">Add Budget</button>
+            <button type="button" id="btn-cancel-add-budget" class="btn btn-secondary mt-3">Cancel</button>
+        </form>
+    </div>
 </div>
 
-<div id="add-budget-form" style="display:none;">
-    <h3>Add New Budget</h3>
-    <form asp-action="CreateBudget" method="post">
-        <div class="form-group mt-2">
-            <label for="Title">Title</label>
-            <input type="text" name="Title" class="form-control" />
-        </div>
-        <div class="form-group mt-2">
-            <label for="Amount">Amount</label>
-            <input type="text" name="Amount" class="form-control" />
-        </div>
-        <div class="form-group mt-2">
-            <label for="StartDate">Start Date</label>
-            <input type="date" name="StartDate" class="form-control" />
-        </div>
-        <div class="form-group mt-2">
-            <label for="EndDate">End Date</label>
-            <input type="date" name="EndDate" class="form-control" />
-        </div>
-        <button type="submit" class="btn btn-primary mt-3">Add Budget</button>
-        <button type="button" id="btn-cancel-add-budget" class="btn btn-secondary mt-3">Cancel</button>
-    </form>
-</div>
+<button id="btn-show-add-budget" class="btn btn-success mt-3">Add New Budget</button>
 
-<button id="btn-show-add-budget" class="btn btn-success">Add New Budget</button>
 
 @section Scripts {
     <script>

@@ -57,6 +57,10 @@ public class AccountController : Controller
 
             return RedirectToAction("Index", "Expenses");
         }
+        else
+        {
+            TempData["ErrorMessage"] = user == null ? "User does not exist." : "Incorrect password.";
+        }
         return View(model);
     }
 
