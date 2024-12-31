@@ -31,8 +31,8 @@ public class CategoriesController : Controller
     {
         if (string.IsNullOrEmpty(category.Name))
         {
-            ModelState.AddModelError("Name", "The Name field is required.");
-            return View(category);
+            TempData["ErrorMessage"] = "The Name field is required.";
+            return RedirectToAction(nameof(Index));
         }
 
         category.UserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
@@ -46,8 +46,8 @@ public class CategoriesController : Controller
     {
         if (string.IsNullOrEmpty(name))
         {
-            ModelState.AddModelError("Name", "The Name field is required.");
-            return View(new Category { Id = id, Name = name });
+            TempData["ErrorMessage"] = "The Name field is required.";
+            return RedirectToAction(nameof(Index));
         }
 
         var category = await _context.Categories.FindAsync(id);

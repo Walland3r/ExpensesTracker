@@ -38,6 +38,12 @@ public class ExpensesController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateBudget(Budget budget)
     {
+        if (string.IsNullOrEmpty(budget.Title) || budget.Amount <= 0 || budget.StartDate == default || budget.EndDate == default)
+        {
+            TempData["ErrorMessage"] = "All fields are required and must be valid.";
+            return RedirectToAction(nameof(Index));
+        }
+
         if (!decimal.TryParse(budget.Amount.ToString(), out decimal amount))
         {
             TempData["ErrorMessage"] = "Budget amount must be a number.";
@@ -85,6 +91,12 @@ public class ExpensesController : Controller
             return NotFound();
         }
 
+        if (string.IsNullOrEmpty(budget.Title) || budget.Amount <= 0 || budget.StartDate == default || budget.EndDate == default)
+        {
+            TempData["ErrorMessage"] = "All fields are required and must be valid.";
+            return RedirectToAction(nameof(Index));
+        }
+
         if (!decimal.TryParse(budget.Amount.ToString(), out decimal amount))
         {
             TempData["ErrorMessage"] = "Amount must be a number.";
@@ -115,6 +127,25 @@ public class ExpensesController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> AddExpenseToBudget(int budgetId, Expense expense)
     {
+        if (expense.Amount <= 0)
+        {
+            TempData["ErrorMessage"] = "Expense amount must be greater than 0.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        var budget = await _context.Budgets.FindAsync(budgetId);
+        if (expense.Date < budget.StartDate || expense.Date > budget.EndDate)
+        {
+            TempData["ErrorMessage"] = "Expense date must be within the budget's start and end dates.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        if (string.IsNullOrEmpty(expense.Description) || expense.CategoryId == 0)
+        {
+            TempData["ErrorMessage"] = "All fields are required.";
+            return RedirectToAction(nameof(Index));
+        }
+
         expense.BudgetId = budgetId;
         _context.Expenses.Add(expense);
         await _context.SaveChangesAsync();
@@ -142,6 +173,31 @@ public class ExpensesController : Controller
         if (id != expense.Id)
         {
             return NotFound();
+        }
+
+        if (expense.Amount <= 0)
+        {
+            TempData["ErrorMessage"] = "Expense amount must be greater than 0.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        var budget = await _context.Budgets.FindAsync(expense.BudgetId);
+        if (budget == null)
+        {
+            TempData["ErrorMessage"] = "Budget not found.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        if (expense.Date < budget.StartDate || expense.Date > budget.EndDate)
+        {
+            TempData["ErrorMessage"] = "Expense date must be within the budget's start and end dates.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        if (string.IsNullOrEmpty(expense.Description) || expense.CategoryId == 0)
+        {
+            TempData["ErrorMessage"] = "All fields are required.";
+            return RedirectToAction(nameof(Index));
         }
 
         _context.Update(expense);
