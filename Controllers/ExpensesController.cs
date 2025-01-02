@@ -245,46 +245,58 @@ public class ExpensesController : Controller
 
         using (var reader = new StreamReader(csvFile.OpenReadStream()))
         {
-            await reader.ReadLineAsync(); //Skip header line
+            await reader.ReadLineAsync(); // Skip header line
 
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            var line = await reader.ReadLineAsync(); // Read budget line
+            var line = await reader.ReadLineAsync();
 
             if (line != null)
             {
                 var values = line.Split(';');
+                if (values.Length != 4 || values.Any(string.IsNullOrEmpty) || !float.TryParse(values[1], out float budgetAmount) || !DateTime.TryParse(values[2], out DateTime startDate) || !DateTime.TryParse(values[3], out DateTime endDate))
+                {
+                    TempData["ErrorMessage"] = "Invalid budget data in CSV file.";
+                    return RedirectToAction(nameof(Index));
+                }
+
                 var budget = new Budget
                 {
                     Title = values[0],
-                    Amount = float.Parse(values[1]),
-                    StartDate = DateTime.Parse(values[2]),
-                    EndDate = DateTime.Parse(values[3]),
+                    Amount = budgetAmount,
+                    StartDate = startDate,
+                    EndDate = endDate,
                     UserId = userId
                 };
 
                 _context.Budgets.Add(budget);
                 await _context.SaveChangesAsync();
 
-                // Skip header line
-                await reader.ReadLineAsync();
+                await reader.ReadLineAsync(); // Skip header line
 
                 while ((line = await reader.ReadLineAsync()) != null)
                 {
                     if (string.IsNullOrWhiteSpace(line)) continue;
 
                     values = line.Split(';');
+                    if (values.Length != 4 || values.Any(string.IsNullOrEmpty) || !float.TryParse(values[0], out float expenseAmount) || !DateTime.TryParse(values[1], out DateTime expenseDate))
+                    {
+                        TempData["ErrorMessage"] = "Invalid expense data in CSV file.";
+                        return RedirectToAction(nameof(Index));
+                    }
+
                     var category = await _context.Categories.FirstOrDefaultAsync(c => c.Name == values[2] && c.UserId == userId);
                     if (category == null)
                     {
                         category = new Category { Name = values[2], UserId = userId };
                         _context.Categories.Add(category);
                         await _context.SaveChangesAsync();
+                        TempData["InfoMessage"] = $"Category '{category.Name}' has been created automatically.";
                     }
 
                     var expense = new Expense
                     {
-                        Amount = float.Parse(values[0]),
-                        Date = DateTime.Parse(values[1]),
+                        Amount = expenseAmount,
+                        Date = expenseDate,
                         CategoryId = category.Id,
                         Description = values[3],
                         BudgetId = budget.Id,
