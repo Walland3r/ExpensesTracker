@@ -35,8 +35,8 @@
         }
     </style>
 </head>
-<body class="light-mode">
-    @if (!Context.Request.Path.Value.Contains("Account/Index") && Context.Request.Path.Value != "/")
+<body class="light-mode" style="@((!Context.Request.Path.Value.Contains("Account/") && Context.Request.Path.Value != "/") ? "" : "overflow: hidden;")">
+    @if (!Context.Request.Path.Value.Contains("Account/") && Context.Request.Path.Value != "/")
     {
         <header>
             <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
@@ -76,7 +76,7 @@
         </main>
     </div>
 
-    @if (!Context.Request.Path.Value.Contains("Account/Index") && Context.Request.Path.Value != "/")
+    @if (!Context.Request.Path.Value.Contains("Account/") && Context.Request.Path.Value != "/")
     {
         <footer class="border-top footer text-muted"> &copy; 2024 - ExpenseTracker </footer>
     }

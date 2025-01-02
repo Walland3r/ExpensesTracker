@@ -28,11 +28,11 @@
             <div class="progress-bar" role="progressbar" style="width: @percentageUsed%;" aria-valuenow="@percentageUsed" aria-valuemin="0" aria-valuemax="100"></div>
         </div>
         <div class="budget-actions">
-            <button class="btn btn-success btn-sm btn-show-add-expense" data-budget-id="@budget.Id">Add New Expense</button>
+            <button class="btn btn-success btn-sm btn-show-add-expense" data-budget-id="@budget.Id" onclick="showAddExpenseForm(this)">Add New Expense</button>
             <form asp-action="DeleteBudget" asp-route-id="@budget.Id" method="post" style="display:inline-block;">
                 <button type="submit" class="btn btn-danger btn-sm">Delete Budget</button>
             </form>
-            <button class="btn btn-warning btn-sm btn-edit-budget" data-budget-id="@budget.Id">Edit Budget</button>
+            <button class="btn btn-warning btn-sm btn-edit-budget" data-budget-id="@budget.Id" onclick="showEditBudgetForm(this)">Edit Budget</button>
         </div>
         <div class="add-expense-form" data-budget-id="@budget.Id" style="display:none;">
             <form asp-action="AddExpenseToBudget" method="post">
@@ -59,7 +59,7 @@
                 </div>
                 <input type="hidden" name="BudgetId" value="@budget.Id" />
                 <button type="submit" class="btn btn-primary mt-3">Add Expense</button>
-                <button type="button" class="btn btn-secondary btn-cancel-add-expense mt-3">Cancel</button>
+                <button type="button" class="btn btn-secondary btn-cancel-add-expense mt-3" onclick="cancelAddExpenseForm(this)">Cancel</button>
             </form>
         </div>
         <div class="edit-budget-form" data-budget-id="@budget.Id" style="display:none;">
@@ -82,7 +82,7 @@
                 </div>
                 <input type="hidden" name="UserId" value="@User.FindFirstValue(ClaimTypes.NameIdentifier)" />
                 <button type="submit" class="btn btn-primary mt-3">Save</button>
-                <button type="button" class="btn btn-secondary btn-cancel-edit-budget mt-3">Cancel</button>
+                <button type="button" class="btn btn-secondary btn-cancel-edit-budget mt-3" onclick="cancelEditBudgetForm(this)">Cancel</button>
             </form>
         </div>
         @{
@@ -127,7 +127,7 @@
                                 <input type="text" class="form-control expense-edit-description" value="@expense.Description" style="display:none;" />
                             </td>
                             <td class="text-center">
-                                <button class="btn btn-warning btn-sm btn-edit">Edit</button>
+                                <button class="btn btn-warning btn-sm btn-edit" onclick="editExpense(this)">Edit</button>
                                 <form asp-action="DeleteExpense" asp-route-id="@expense.Id" method="post" style="display:inline;">
                                     <button type="submit" class="btn btn-danger btn-sm">Delete</button>
                                 </form>
@@ -139,7 +139,7 @@
                                     <input type="hidden" name="Description" class="form-control expense-edit-description-input" />
                                     <input type="hidden" name="BudgetId" value="@expense.BudgetId" />
                                     <button type="submit" class="btn btn-primary btn-sm">Save</button>
-                                    <button type="button" class="btn btn-secondary btn-sm btn-cancel">Cancel</button>
+                                    <button type="button" class="btn btn-secondary btn-sm btn-cancel" onclick="cancelEditExpense(this)">Cancel</button>
                                 </form>
                             </td>
                         </tr>
@@ -170,73 +170,77 @@
                 <input type="date" name="EndDate" class="form-control" />
             </div>
             <button type="submit" class="btn btn-primary mt-3">Add Budget</button>
-            <button type="button" id="btn-cancel-add-budget" class="btn btn-secondary mt-3">Cancel</button>
+            <button type="button" id="btn-cancel-add-budget" class="btn btn-secondary mt-3" onclick="cancelAddBudgetForm()">Cancel</button>
         </form>
     </div>
 </div>
 
-<button id="btn-show-add-budget" class="btn btn-success mt-3">Add New Budget</button>
+<button id="btn-show-add-budget" class="btn btn-success mt-3" onclick="showAddBudgetForm()">Add New Budget</button>
 
 
 @section Scripts {
     <script>
-        document.querySelectorAll('.btn-show-add-expense').forEach(button => {
-            button.addEventListener('click', function() {
-                const budgetId = this.getAttribute('data-budget-id');
-                document.querySelector(`.add-expense-form[data-budget-id="${budgetId}"]`).style.display = 'block';
-                this.style.display = 'none';
-            });
-        });
+        function showAddExpenseForm(button) {
+            const budgetId = button.getAttribute('data-budget-id');
+            document.querySelector(`.add-expense-form[data-budget-id="${budgetId}"]`).style.display = 'block';
+            button.style.display = 'none';
+        }
 
-        document.querySelectorAll('.btn-cancel-add-expense').forEach(button => {
-            button.addEventListener('click', function() {
-                const form = this.closest('.add-expense-form');
-                form.style.display = 'none';
-                document.querySelector(`.btn-show-add-expense[data-budget-id="${form.getAttribute('data-budget-id')}"]`).style.display = 'inline-block';
-            });
-        });
+        function cancelAddExpenseForm(button) {
+            const form = button.closest('.add-expense-form');
+            form.style.display = 'none';
+            document.querySelector(`.btn-show-add-expense[data-budget-id="${form.getAttribute('data-budget-id')}"]`).style.display = 'inline-block';
+        }
 
-        document.getElementById('btn-show-add-budget').addEventListener('click', function() {
+        function showAddBudgetForm() {
             document.getElementById('add-budget-form').style.display = 'inline-block';
-            this.style.display = 'none';
-        });
+            document.getElementById('btn-show-add-budget').style.display = 'none';
+        }
 
-        document.getElementById('btn-cancel-add-budget').addEventListener('click', function() {
+        function cancelAddBudgetForm() {
             document.getElementById('add-budget-form').style.display = 'none';
             document.getElementById('btn-show-add-budget').style.display = 'inline-block';
-        });
+        }
 
-        document.querySelectorAll('.btn-edit').forEach(button => {
-            button.addEventListener('click', function() {
-                const row = this.closest('tr');
-                row.querySelector('.expense-amount').style.display = 'none';
-                row.querySelector('.expense-edit-amount').style.display = 'block';
-                row.querySelector('.expense-date').style.display = 'none';
-                row.querySelector('.expense-edit-date').style.display = 'block';
-                row.querySelector('.expense-category').style.display = 'none';
-                row.querySelector('.expense-edit-category').style.display = 'block';
-                row.querySelector('.expense-description').style.display = 'none';
-                row.querySelector('.expense-edit-description').style.display = 'block';
-                row.querySelector('.form-inline-edit').style.display = 'inline';
-                this.style.display = 'none';
-            });
-        });
+        function editExpense(button) {
+            const row = button.closest('tr');
+            row.querySelector('.expense-amount').style.display = 'none';
+            row.querySelector('.expense-edit-amount').style.display = 'block';
+            row.querySelector('.expense-date').style.display = 'none';
+            row.querySelector('.expense-edit-date').style.display = 'block';
+            row.querySelector('.expense-category').style.display = 'none';
+            row.querySelector('.expense-edit-category').style.display = 'block';
+            row.querySelector('.expense-description').style.display = 'none';
+            row.querySelector('.expense-edit-description').style.display = 'block';
+            row.querySelector('.form-inline-edit').style.display = 'inline';
+            button.style.display = 'none';
+        }
 
-        document.querySelectorAll('.btn-cancel').forEach(button => {
-            button.addEventListener('click', function() {
-                const row = this.closest('tr');
-                row.querySelector('.expense-amount').style.display = 'block';
-                row.querySelector('.expense-edit-amount').style.display = 'none';
-                row.querySelector('.expense-date').style.display = 'block';
-                row.querySelector('.expense-edit-date').style.display = 'none';
-                row.querySelector('.expense-category').style.display = 'block';
-                row.querySelector('.expense-edit-category').style.display = 'none';
-                row.querySelector('.expense-description').style.display = 'block';
-                row.querySelector('.expense-edit-description').style.display = 'none';
-                row.querySelector('.form-inline-edit').style.display = 'none';
-                row.querySelector('.btn-edit').style.display = 'inline';
-            });
-        });
+        function cancelEditExpense(button) {
+            const row = button.closest('tr');
+            row.querySelector('.expense-amount').style.display = 'block';
+            row.querySelector('.expense-edit-amount').style.display = 'none';
+            row.querySelector('.expense-date').style.display = 'block';
+            row.querySelector('.expense-edit-date').style.display = 'none';
+            row.querySelector('.expense-category').style.display = 'block';
+            row.querySelector('.expense-edit-category').style.display = 'none';
+            row.querySelector('.expense-description').style.display = 'block';
+            row.querySelector('.expense-edit-description').style.display = 'none';
+            row.querySelector('.form-inline-edit').style.display = 'none';
+            row.querySelector('.btn-edit').style.display = 'inline';
+        }
+
+        function showEditBudgetForm(button) {
+            const budgetId = button.getAttribute('data-budget-id');
+            document.querySelector(`.edit-budget-form[data-budget-id="${budgetId}"]`).style.display = 'block';
+            button.style.display = 'none';
+        }
+
+        function cancelEditBudgetForm(button) {
+            const form = button.closest('.edit-budget-form');
+            form.style.display = 'none';
+            document.querySelector(`.btn-edit-budget[data-budget-id="${form.getAttribute('data-budget-id')}"]`).style.display = 'inline-block';
+        }
 
         document.querySelectorAll('.form-inline-edit').forEach(form => {
             form.addEventListener('submit', function() {
@@ -249,22 +253,6 @@
                 this.querySelector('.expense-edit-date-input').value = dateInput.value;
                 this.querySelector('.expense-edit-category-input').value = categoryInput.value;
                 this.querySelector('.expense-edit-description-input').value = descriptionInput.value;
-            });
-        });
-
-        document.querySelectorAll('.btn-edit-budget').forEach(button => {
-            button.addEventListener('click', function() {
-                const budgetId = this.getAttribute('data-budget-id');
-                document.querySelector(`.edit-budget-form[data-budget-id="${budgetId}"]`).style.display = 'block';
-                this.style.display = 'none';
-            });
-        });
-
-        document.querySelectorAll('.btn-cancel-edit-budget').forEach(button => {
-            button.addEventListener('click', function() {
-                const form = this.closest('.edit-budget-form');
-                form.style.display = 'none';
-                document.querySelector(`.btn-edit-budget[data-budget-id="${form.getAttribute('data-budget-id')}"]`).style.display = 'inline-block';
             });
         });
 
