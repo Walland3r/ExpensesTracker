@@ -1,8 +1,6 @@
 @model ExpenseTracker.Models.ExpenseViewModel
 @using System.Security.Claims;
 
-<h1 class="text-center my-4">Your Budgets</h1>
-
 @if (TempData["ErrorMessage"] != null)
 {
     <div class="alert alert-danger alert-dismissible fade show" role="alert">
@@ -11,7 +9,15 @@
     </div>
 }
 
-<div class="budget-container">
+@if (TempData["InfoMessage"] != null)
+{
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        @TempData["InfoMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="budget-container mt-4">
 @foreach (var budget in Model.Budgets)
 {
     <div class="budget-section">
@@ -28,11 +34,14 @@
             <div class="progress-bar" role="progressbar" style="width: @percentageUsed%;" aria-valuenow="@percentageUsed" aria-valuemin="0" aria-valuemax="100"></div>
         </div>
         <div class="budget-actions">
-            <button class="btn btn-success btn-sm btn-show-add-expense" data-budget-id="@budget.Id">Add New Expense</button>
+            <button class="btn btn-success btn-sm btn-show-add-expense" data-budget-id="@budget.Id" onclick="showAddExpenseForm(this)">Add New Expense</button>
             <form asp-action="DeleteBudget" asp-route-id="@budget.Id" method="post" style="display:inline-block;">
                 <button type="submit" class="btn btn-danger btn-sm">Delete Budget</button>
             </form>
-            <button class="btn btn-warning btn-sm btn-edit-budget" data-budget-id="@budget.Id">Edit Budget</button>
+            <button class="btn btn-warning btn-sm btn-edit-budget" data-budget-id="@budget.Id" onclick="showEditBudgetForm(this)">Edit Budget</button>
+            <button class="btn btn-info btn-sm" onclick="exportBudgetToCsv(@budget.Id)">
+                <i class="fas fa-file-csv"></i> Export Budget to CSV
+            </button>
         </div>
         <div class="add-expense-form" data-budget-id="@budget.Id" style="display:none;">
             <form asp-action="AddExpenseToBudget" method="post">
@@ -59,7 +68,7 @@
                 </div>
                 <input type="hidden" name="BudgetId" value="@budget.Id" />
                 <button type="submit" class="btn btn-primary mt-3">Add Expense</button>
-                <button type="button" class="btn btn-secondary btn-cancel-add-expense mt-3">Cancel</button>
+                <button type="button" class="btn btn-secondary btn-cancel-add-expense mt-3" onclick="cancelAddExpenseForm(this)">Cancel</button>
             </form>
         </div>
         <div class="edit-budget-form" data-budget-id="@budget.Id" style="display:none;">
@@ -82,7 +91,7 @@
                 </div>
                 <input type="hidden" name="UserId" value="@User.FindFirstValue(ClaimTypes.NameIdentifier)" />
                 <button type="submit" class="btn btn-primary mt-3">Save</button>
-                <button type="button" class="btn btn-secondary btn-cancel-edit-budget mt-3">Cancel</button>
+                <button type="button" class="btn btn-secondary btn-cancel-edit-budget mt-3" onclick="cancelEditBudgetForm(this)">Cancel</button>
             </form>
         </div>
         @{
@@ -93,10 +102,10 @@
             <table class="table table-striped table-bordered">
                 <thead class="thead-dark">
                     <tr>
-                        <th class="text-center">Amount</th>
-                        <th class="text-center">Date</th>
-                        <th class="text-center">Category</th>
-                        <th class="text-center">Description</th>
+                        <th class="text-center"><a href="#" class="sort-header" data-sort-by="amount">Amount</a></th>
+                        <th class="text-center"><a href="#" class="sort-header" data-sort-by="date">Date</a></th>
+                        <th class="text-center"><a href="#" class="sort-header" data-sort-by="category">Category</a></th>
+                        <th class="text-center"><a href="#" class="sort-header" data-sort-by="description">Description</a></th>
                         <th class="text-center">Actions</th>
                     </tr>
                 </thead>
@@ -127,7 +136,7 @@
                                 <input type="text" class="form-control expense-edit-description" value="@expense.Description" style="display:none;" />
                             </td>
                             <td class="text-center">
-                                <button class="btn btn-warning btn-sm btn-edit">Edit</button>
+                                <button class="btn btn-warning btn-sm btn-edit" onclick="editExpense(this)">Edit</button>
                                 <form asp-action="DeleteExpense" asp-route-id="@expense.Id" method="post" style="display:inline;">
                                     <button type="submit" class="btn btn-danger btn-sm">Delete</button>
                                 </form>
@@ -139,7 +148,7 @@
                                     <input type="hidden" name="Description" class="form-control expense-edit-description-input" />
                                     <input type="hidden" name="BudgetId" value="@expense.BudgetId" />
                                     <button type="submit" class="btn btn-primary btn-sm">Save</button>
-                                    <button type="button" class="btn btn-secondary btn-sm btn-cancel">Cancel</button>
+                                    <button type="button" class="btn btn-secondary btn-sm btn-cancel" onclick="cancelEditExpense(this)">Cancel</button>
                                 </form>
                             </td>
                         </tr>
@@ -147,6 +156,9 @@
                 </tbody>
             </table>
         }
+        <form id="export-csv-form-@budget.Id" asp-action="ExportBudgetToCsv" method="post" style="display:none;">
+            <input type="hidden" name="BudgetId" value="@budget.Id" />
+        </form>
     </div>
 }
 
@@ -170,73 +182,110 @@
                 <input type="date" name="EndDate" class="form-control" />
             </div>
             <button type="submit" class="btn btn-primary mt-3">Add Budget</button>
-            <button type="button" id="btn-cancel-add-budget" class="btn btn-secondary mt-3">Cancel</button>
+            <button type="button" id="btn-cancel-add-budget" class="btn btn-secondary mt-3" onclick="cancelAddBudgetForm()">Cancel</button>
         </form>
     </div>
 </div>
 
-<button id="btn-show-add-budget" class="btn btn-success mt-3">Add New Budget</button>
+<div id="import-csv-form" class="budget-section" style="display:none;">
+    <h3>Import Budget from CSV</h3>
+    <form asp-action="ImportBudgetFromCsv" method="post" enctype="multipart/form-data">
+        <div class="form-group mt-4 mb-4">
+            <input type="file" name="csvFile" class="form-control" />
+        </div>
+        <button type="submit" class="btn btn-primary mt-3">Import</button>
+        <button type="button" id="btn-cancel-import-csv" class="btn btn-secondary mt-3" onclick="cancelImportCsvForm()">Cancel</button>
+    </form>
+</div>
 
+<button id="btn-show-add-budget" class="btn btn-success mt-3" onclick="showAddBudgetForm()">Add New Budget</button>
+<button id="btn-show-import-csv" class="btn btn-info mt-3" onclick="showImportCsvForm()">Import from CSV</button>
+
+<form id="export-csv-form" asp-action="ExportBudgetsToCsv" method="post" style="display:none;">
+    <input type="hidden" name="UserId" value="@User.FindFirstValue(ClaimTypes.NameIdentifier)" />
+</form>
 
 @section Scripts {
     <script>
-        document.querySelectorAll('.btn-show-add-expense').forEach(button => {
-            button.addEventListener('click', function() {
-                const budgetId = this.getAttribute('data-budget-id');
-                document.querySelector(`.add-expense-form[data-budget-id="${budgetId}"]`).style.display = 'block';
-                this.style.display = 'none';
-            });
-        });
+        function showAddExpenseForm(button) {
+            const budgetId = button.getAttribute('data-budget-id');
+            document.querySelector(`.add-expense-form[data-budget-id="${budgetId}"]`).style.display = 'block';
+            button.style.display = 'none';
+        }
 
-        document.querySelectorAll('.btn-cancel-add-expense').forEach(button => {
-            button.addEventListener('click', function() {
-                const form = this.closest('.add-expense-form');
-                form.style.display = 'none';
-                document.querySelector(`.btn-show-add-expense[data-budget-id="${form.getAttribute('data-budget-id')}"]`).style.display = 'inline-block';
-            });
-        });
+        function cancelAddExpenseForm(button) {
+            const form = button.closest('.add-expense-form');
+            form.style.display = 'none';
+            document.querySelector(`.btn-show-add-expense[data-budget-id="${form.getAttribute('data-budget-id')}"]`).style.display = 'inline-block';
+        }
 
-        document.getElementById('btn-show-add-budget').addEventListener('click', function() {
+        function showAddBudgetForm() {
             document.getElementById('add-budget-form').style.display = 'inline-block';
-            this.style.display = 'none';
-        });
+            document.getElementById('btn-show-add-budget').style.display = 'none';
+            document.getElementById('btn-show-import-csv').style.display = 'none';
+        }
 
-        document.getElementById('btn-cancel-add-budget').addEventListener('click', function() {
+        function cancelAddBudgetForm() {
             document.getElementById('add-budget-form').style.display = 'none';
             document.getElementById('btn-show-add-budget').style.display = 'inline-block';
-        });
+            document.getElementById('btn-show-import-csv').style.display = 'inline-block';
+        }
 
-        document.querySelectorAll('.btn-edit').forEach(button => {
-            button.addEventListener('click', function() {
-                const row = this.closest('tr');
-                row.querySelector('.expense-amount').style.display = 'none';
-                row.querySelector('.expense-edit-amount').style.display = 'block';
-                row.querySelector('.expense-date').style.display = 'none';
-                row.querySelector('.expense-edit-date').style.display = 'block';
-                row.querySelector('.expense-category').style.display = 'none';
-                row.querySelector('.expense-edit-category').style.display = 'block';
-                row.querySelector('.expense-description').style.display = 'none';
-                row.querySelector('.expense-edit-description').style.display = 'block';
-                row.querySelector('.form-inline-edit').style.display = 'inline';
-                this.style.display = 'none';
-            });
-        });
+        function editExpense(button) {
+            const row = button.closest('tr');
+            row.querySelector('.expense-amount').style.display = 'none';
+            row.querySelector('.expense-edit-amount').style.display = 'block';
+            row.querySelector('.expense-date').style.display = 'none';
+            row.querySelector('.expense-edit-date').style.display = 'block';
+            row.querySelector('.expense-category').style.display = 'none';
+            row.querySelector('.expense-edit-category').style.display = 'block';
+            row.querySelector('.expense-description').style.display = 'none';
+            row.querySelector('.expense-edit-description').style.display = 'block';
+            row.querySelector('.form-inline-edit').style.display = 'inline';
+            button.style.display = 'none';
+        }
 
-        document.querySelectorAll('.btn-cancel').forEach(button => {
-            button.addEventListener('click', function() {
-                const row = this.closest('tr');
-                row.querySelector('.expense-amount').style.display = 'block';
-                row.querySelector('.expense-edit-amount').style.display = 'none';
-                row.querySelector('.expense-date').style.display = 'block';
-                row.querySelector('.expense-edit-date').style.display = 'none';
-                row.querySelector('.expense-category').style.display = 'block';
-                row.querySelector('.expense-edit-category').style.display = 'none';
-                row.querySelector('.expense-description').style.display = 'block';
-                row.querySelector('.expense-edit-description').style.display = 'none';
-                row.querySelector('.form-inline-edit').style.display = 'none';
-                row.querySelector('.btn-edit').style.display = 'inline';
-            });
-        });
+        function cancelEditExpense(button) {
+            const row = button.closest('tr');
+            row.querySelector('.expense-amount').style.display = 'block';
+            row.querySelector('.expense-edit-amount').style.display = 'none';
+            row.querySelector('.expense-date').style.display = 'block';
+            row.querySelector('.expense-edit-date').style.display = 'none';
+            row.querySelector('.expense-category').style.display = 'block';
+            row.querySelector('.expense-edit-category').style.display = 'none';
+            row.querySelector('.expense-description').style.display = 'block';
+            row.querySelector('.expense-edit-description').style.display = 'none';
+            row.querySelector('.form-inline-edit').style.display = 'none';
+            row.querySelector('.btn-edit').style.display = 'inline';
+        }
+
+        function showEditBudgetForm(button) {
+            const budgetId = button.getAttribute('data-budget-id');
+            document.querySelector(`.edit-budget-form[data-budget-id="${budgetId}"]`).style.display = 'block';
+            button.style.display = 'none';
+        }
+
+        function cancelEditBudgetForm(button) {
+            const form = button.closest('.edit-budget-form');
+            form.style.display = 'none';
+            document.querySelector(`.btn-edit-budget[data-budget-id="${form.getAttribute('data-budget-id')}"]`).style.display = 'inline-block';
+        }
+
+        function exportBudgetToCsv(budgetId) {
+            document.getElementById(`export-csv-form-${budgetId}`).submit();
+        }
+
+        function showImportCsvForm() {
+            document.getElementById('import-csv-form').style.display = 'block';
+            document.getElementById('btn-show-import-csv').style.display = 'none';
+            document.getElementById('btn-show-add-budget').style.display = 'none';
+        }
+
+        function cancelImportCsvForm() {
+            document.getElementById('import-csv-form').style.display = 'none';
+            document.getElementById('btn-show-import-csv').style.display = 'inline-block';
+            document.getElementById('btn-show-add-budget').style.display = 'inline-block';
+        }
 
         document.querySelectorAll('.form-inline-edit').forEach(form => {
             form.addEventListener('submit', function() {
@@ -252,19 +301,25 @@
             });
         });
 
-        document.querySelectorAll('.btn-edit-budget').forEach(button => {
-            button.addEventListener('click', function() {
-                const budgetId = this.getAttribute('data-budget-id');
-                document.querySelector(`.edit-budget-form[data-budget-id="${budgetId}"]`).style.display = 'block';
-                this.style.display = 'none';
-            });
-        });
-
-        document.querySelectorAll('.btn-cancel-edit-budget').forEach(button => {
-            button.addEventListener('click', function() {
-                const form = this.closest('.edit-budget-form');
-                form.style.display = 'none';
-                document.querySelector(`.btn-edit-budget[data-budget-id="${form.getAttribute('data-budget-id')}"]`).style.display = 'inline-block';
+        document.querySelectorAll('.sort-header').forEach(header => {
+            header.addEventListener('click', function(event) {
+                event.preventDefault();
+                const sortBy = this.getAttribute('data-sort-by');
+                const rows = Array.from(document.querySelectorAll('tbody tr'));
+                rows.sort((a, b) => {
+                    const aValue = a.querySelector(`.expense-${sortBy}`).innerText;
+                    const bValue = b.querySelector(`.expense-${sortBy}`).innerText;
+                    if (sortBy === 'amount') {
+                        return parseFloat(aValue) - parseFloat(bValue);
+                    } else if (sortBy === 'date') {
+                        return new Date(aValue) - new Date(bValue);
+                    } else {
+                        return aValue.localeCompare(bValue);
+                    }
+                });
+                const tbody = document.querySelector('tbody');
+                tbody.innerHTML = '';
+                rows.forEach(row => tbody.appendChild(row));
             });
         });
     </script>
@@ -290,6 +345,11 @@
     .budget-section table{
         margin-top: 2rem;
     }
+    .budget-actions {
+        display: flex;
+        justify-content: space-around;
+        margin-top: 1rem;
+    }
     .light-mode .budget-section {
         background-color: #f9f9f9;
     }
@@ -302,6 +362,13 @@
     .thead-dark th {
         background-color: #343a40;
         color: #fff;
+    }
+    .thead-dark th a {
+        text-decoration: none;
+        color: #fff;
+    }
+    .thead-dark th a:hover {
+        color: #ccc;
     }
     .progress {
         height: 2rem;

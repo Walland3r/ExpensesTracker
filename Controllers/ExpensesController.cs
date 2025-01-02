@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using System.Text;
 
 [Authorize]
 public class ExpensesController : Controller
@@ -202,6 +203,114 @@ public class ExpensesController : Controller
 
         _context.Update(expense);
         await _context.SaveChangesAsync();
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ExportBudgetToCsv(int budgetId)
+    {
+        var budget = await _context.Budgets
+            .Include(b => b.Expenses)
+            .ThenInclude(e => e.Category)
+            .FirstOrDefaultAsync(b => b.Id == budgetId);
+
+        if (budget == null)
+        {
+            return NotFound();
+        }
+
+        var csv = new StringBuilder();
+        csv.AppendLine("Title;Amount;StartDate;EndDate");
+        csv.AppendLine($"{budget.Title};{budget.Amount};{budget.StartDate.ToShortDateString()};{budget.EndDate.ToShortDateString()}");
+        csv.AppendLine("Amount;Date;Category;Description");
+
+        foreach (var expense in budget.Expenses)
+        {
+            csv.AppendLine($"{expense.Amount};{expense.Date.ToShortDateString()};{expense.Category.Name};{expense.Description}");
+        }
+
+        return File(Encoding.UTF8.GetBytes(csv.ToString()), "text/csv", $"{budget.Title}_budget.csv");
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ImportBudgetFromCsv(IFormFile csvFile)
+    {
+        if (csvFile == null || csvFile.Length == 0)
+        {
+            TempData["ErrorMessage"] = "Please upload a valid CSV file.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        using (var reader = new StreamReader(csvFile.OpenReadStream()))
+        {
+            await reader.ReadLineAsync(); // Skip header line
+
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var line = await reader.ReadLineAsync();
+
+            if (line != null)
+            {
+                var values = line.Split(';');
+                if (values.Length != 4 || values.Any(string.IsNullOrEmpty) || !float.TryParse(values[1], out float budgetAmount) || !DateTime.TryParse(values[2], out DateTime startDate) || !DateTime.TryParse(values[3], out DateTime endDate))
+                {
+                    TempData["ErrorMessage"] = "Invalid budget data in CSV file.";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                var budget = new Budget
+                {
+                    Title = values[0],
+                    Amount = budgetAmount,
+                    StartDate = startDate,
+                    EndDate = endDate,
+                    UserId = userId
+                };
+
+                _context.Budgets.Add(budget);
+                await _context.SaveChangesAsync();
+
+                await reader.ReadLineAsync(); // Skip header line
+
+                while ((line = await reader.ReadLineAsync()) != null)
+                {
+                    if (string.IsNullOrWhiteSpace(line)) continue;
+
+                    values = line.Split(';');
+                    if (values.Length != 4 || values.Any(string.IsNullOrEmpty) || !float.TryParse(values[0], out float expenseAmount) || !DateTime.TryParse(values[1], out DateTime expenseDate))
+                    {
+                        TempData["ErrorMessage"] = "Invalid expense data in CSV file.";
+                        return RedirectToAction(nameof(Index));
+                    }
+
+                    var category = await _context.Categories.FirstOrDefaultAsync(c => c.Name == values[2] && c.UserId == userId);
+                    if (category == null)
+                    {
+                        category = new Category { Name = values[2], UserId = userId };
+                        _context.Categories.Add(category);
+                        await _context.SaveChangesAsync();
+                        TempData["InfoMessage"] = $"Category '{category.Name}' has been created automatically.";
+                    }
+
+                    var expense = new Expense
+                    {
+                        Amount = expenseAmount,
+                        Date = expenseDate,
+                        CategoryId = category.Id,
+                        Description = values[3],
+                        BudgetId = budget.Id,
+                        Category = category,
+                        Budget = budget
+                    };
+
+                    _context.Expenses.Add(expense);
+                }
+
+                await _context.SaveChangesAsync();
+            }
+        }
+
         return RedirectToAction(nameof(Index));
     }
 }
