@@ -34,14 +34,18 @@
             <div class="progress-bar" role="progressbar" style="width: @percentageUsed%;" aria-valuenow="@percentageUsed" aria-valuemin="0" aria-valuemax="100"></div>
         </div>
         <div class="budget-actions">
-            <button class="btn btn-success btn-sm btn-show-add-expense" data-budget-id="@budget.Id" onclick="showAddExpenseForm(this)">Add New Expense</button>
+            <button class="btn btn-success btn-sm btn-show-add-expense" data-budget-id="@budget.Id" onclick="showAddExpenseForm(this)">Add Expense</button>
             <form asp-action="DeleteBudget" asp-route-id="@budget.Id" method="post" style="display:inline-block;">
                 <button type="submit" class="btn btn-danger btn-sm">Delete Budget</button>
             </form>
             <button class="btn btn-warning btn-sm btn-edit-budget" data-budget-id="@budget.Id" onclick="showEditBudgetForm(this)">Edit Budget</button>
             <button class="btn btn-info btn-sm" onclick="exportBudgetToCsv(@budget.Id)">
-                <i class="fas fa-file-csv"></i> Export Budget to CSV
+                <i class="fas fa-file-csv"></i> Export to CSV
             </button>
+            <form asp-action="GenerateReport" method="post" target="_blank" style="display:inline;">
+                <input type="hidden" name="BudgetId" value="@budget.Id" />
+                <button type="submit" class="btn btn-primary btn-sm">Generate Report</button>
+            </form>
         </div>
         <div class="add-expense-form" data-budget-id="@budget.Id" style="display:none;">
             <form asp-action="AddExpenseToBudget" method="post">
@@ -344,11 +348,6 @@
     }
     .budget-section table{
         margin-top: 2rem;
-    }
-    .budget-actions {
-        display: flex;
-        justify-content: space-around;
-        margin-top: 1rem;
     }
     .light-mode .budget-section {
         background-color: #f9f9f9;

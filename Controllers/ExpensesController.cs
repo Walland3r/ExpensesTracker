@@ -313,5 +313,31 @@ public class ExpensesController : Controller
 
         return RedirectToAction(nameof(Index));
     }
+
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> GenerateReport(int BudgetId)
+    {
+        var budget = await _context.Budgets
+            .Include(b => b.Expenses)
+            .ThenInclude(e => e.Category)
+            .FirstOrDefaultAsync(b => b.Id == BudgetId);
+
+        if (budget == null)
+        {
+            return NotFound();
+        }
+
+        var expenses = budget.Expenses.ToList();
+
+        var viewModel = new ReportViewModel
+        {
+            Budget = budget,
+            Expenses = expenses
+        };
+
+        return View("Report", viewModel);
+    }
 }
 
