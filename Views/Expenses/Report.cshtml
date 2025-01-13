@@ -1,0 +1,173 @@
+@model ExpenseTracker.Models.ReportViewModel
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Budget Report</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Budget Report: @Model.Budget.Title</h1>
+        <p>Budget Amount: @Model.Budget.Amount.ToString("C")</p>
+        <p>Start Date: @Model.Budget.StartDate.ToShortDateString()</p>
+        <p>End Date: @Model.Budget.EndDate.ToShortDateString()</p>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Amount</th>
+                    <th>Date</th>
+                    <th>Category</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var expense in Model.Expenses)
+                {
+                    <tr>
+                        <td>@expense.Amount.ToString("C")</td>
+                        <td>@expense.Date.ToShortDateString()</td>
+                        <td>@expense.Category.Name</td>
+                        <td>@expense.Description</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <div class="row mt-4">
+            <div class="col-md-6 d-flex justify-content-center">
+                <div class="text-center">
+                    <h3>Expense Distribution</h3>
+                    <canvas id="expensesPieChart"></canvas>
+                </div>
+            </div>
+            <div class="col-md-6 d-flex justify-content-center">
+                <div class="text-center">
+                    <h3>Category Count</h3>
+                    <canvas id="categoryCountPieChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <h3 class="mt-5 text-center">Expense Amount by Category</h3>
+        <div class="">
+            <div class="col-md-10 text-center">
+                <canvas id="expensesBarChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var pieCtx = document.getElementById('expensesPieChart').getContext('2d');
+            var barCtx = document.getElementById('expensesBarChart').getContext('2d');
+            var countPieCtx = document.getElementById('categoryCountPieChart').getContext('2d');
+            var labels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Expenses.GroupBy(e => e.Category.Name).Select(g => g.Key)));
+            var data = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Expenses.GroupBy(e => e.Category.Name).Select(g => g.Sum(e => e.Amount))));
+            var countData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Expenses.GroupBy(e => e.Category.Name).Select(g => g.Count())));
+
+            var pieChart = new Chart(pieCtx, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    var label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    label += context.raw.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            var barChart = new Chart(barCtx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Expense Amount',
+                        data: data,
+                        backgroundColor: '#36A2EB'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return value.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    var label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    label += context.raw.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            var countPieChart = new Chart(countPieCtx, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: countData,
+                        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    var label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    label += context.raw;
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
