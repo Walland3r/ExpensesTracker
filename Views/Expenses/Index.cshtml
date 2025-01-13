@@ -22,16 +22,23 @@
 {
     <div class="budget-section">
         <h2 class='mb-4'>@budget.Title</h2>
-        <p style="display:inline-block;">Start Date: @budget.StartDate.ToShortDateString()</p>
-        <p style="display:inline-block; float:right;">End Date: @budget.EndDate.ToShortDateString()</p>
         @{
             var totalExpenses = Model.Expenses.Where(e => e.BudgetId == budget.Id).Sum(e => e.Amount);
             var fundsRemaining = budget.Amount - totalExpenses;
             var percentageUsed = (totalExpenses / budget.Amount) * 100;
         }
+        @if (percentageUsed > 80)
+        {
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                Warning: You exceeded 80% of your budget!
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+        <p style="display:inline-block;">Start Date: @budget.StartDate.ToShortDateString()</p>
+        <p style="display:inline-block; float:right;">End Date: @budget.EndDate.ToShortDateString()</p>
         <p style="text-align: center;">Funds remaining: @fundsRemaining.ToString("C")</p>
         <div class="progress">
-            <div class="progress-bar" role="progressbar" style="width: @percentageUsed%;" aria-valuenow="@percentageUsed" aria-valuemin="0" aria-valuemax="100"></div>
+            <div class="progress-bar" role="progressbar" style="width: @(percentageUsed.ToString(System.Globalization.CultureInfo.InvariantCulture))%" aria-valuenow="@(percentageUsed.ToString(System.Globalization.CultureInfo.InvariantCulture))" aria-valuemin="0" aria-valuemax="100"></div>
         </div>
         <div class="budget-actions">
             <button class="btn btn-success btn-sm btn-show-add-expense" data-budget-id="@budget.Id" onclick="showAddExpenseForm(this)">Add Expense</button>

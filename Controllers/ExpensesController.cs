@@ -23,6 +23,11 @@ public class ExpensesController : Controller
         var categories = await _context.Categories.Where(c => c.UserId == userId).ToListAsync();
         ViewBag.Categories = new SelectList(categories, "Id", "Name");
 
+        if (!categories.Any())
+        {
+            TempData["InfoMessage"] = "Please create a category first.";
+        }
+
         var viewModel = new ExpenseViewModel
         {
             Expenses = await _context.Expenses
