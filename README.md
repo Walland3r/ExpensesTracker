@@ -27,7 +27,7 @@ Expense Tracker is a web application built with **ASP.NET MVC**, designed to sim
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/YourUser/BudgetTracker.git
+   git clone https://github.com/Walland3r/BudgetTracker.git
    cd BudgetTracker
    ```
 
